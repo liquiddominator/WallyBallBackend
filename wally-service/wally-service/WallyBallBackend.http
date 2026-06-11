@@ -238,3 +238,9 @@ Authorization: Bearer {{AccessToken}}
 Accept: application/json
 
 ###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/campeonatos-categorias/1/posiciones
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###

@@ -463,6 +463,39 @@ GET /api/v1/resultados/{resultadoId}/auditoria
 
 Respuesta: historial de cambios del resultado.
 
+## Posiciones
+
+### Consultar tabla de posiciones
+
+```http
+GET /api/v1/campeonatos-categorias/{campeonatoCategoriaId}/posiciones
+```
+
+Respuesta: tabla ordenada de equipos de la categoria de campeonato.
+
+Campos principales:
+
+- `posicion`
+- `equipo`
+- `puntos`
+- `partidosJugados`
+- `ganados`
+- `perdidos`
+- `setsFavor`
+- `setsContra`
+- `diferenciaSets`
+- `puntosFavor`
+- `puntosContra`
+- `diferenciaPuntos`
+
+Notas:
+
+- La tabla se recalcula automaticamente al registrar o modificar resultados.
+- Si una categoria de campeonato todavia no tiene resultados, se devuelven los equipos activos con acumulados en cero.
+- El orden usa puntos, ganados, diferencia de sets, diferencia de puntos y nombre del equipo.
+
+Respuestas relevantes: `200`, `404`.
+
 ## Swagger y OpenAPI
 
 ```http

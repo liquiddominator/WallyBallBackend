@@ -281,9 +281,9 @@ El entorno incluye:
 - Factory de sesion para Cassandra.
 - Validacion JWT configurada.
 - Swagger UI con autorizacion Bearer JWT.
-- Epicas 2 a 7 implementadas: campeonatos, categorias, equipos, jugadores, fixture y resultados.
+- Epicas 2 a 8 implementadas: campeonatos, categorias, equipos, jugadores, fixture, resultados y posiciones.
 
 ## Siguientes Pasos Recomendados
 
-- Implementar posiciones, portal del jugador y reportes pendientes.
+- Implementar portal del jugador y reportes pendientes.
 - Agregar pruebas unitarias para reglas de fixture y posiciones.
