@@ -504,6 +504,133 @@ Notas:
 
 Respuestas relevantes: `200`, `404`.
 
+## Portal del Jugador
+
+Todos los endpoints del portal requieren JWT valido con rol `JUGADOR`. El servicio identifica al jugador con el claim `persona_id` emitido por `personas-service`.
+
+### Consultar fixture personal
+
+```http
+GET /api/v1/portal/jugador/fixture
+```
+
+Respuesta: proximos partidos donde participa alguno de los equipos activos del jugador.
+
+Notas:
+
+- Solo devuelve partidos del equipo del jugador.
+- Excluye partidos finalizados y cancelados.
+- Incluye campeonato, categoria, jornada, equipos y fecha/hora programada.
+
+Respuestas relevantes: `200`, `401`, `403`, `404`.
+
+### Consultar resultados de mis categorias
+
+```http
+GET /api/v1/portal/jugador/resultados
+```
+
+Respuesta: resultados agrupados por cada categoria de campeonato donde el jugador tiene una inscripcion activa.
+
+Notas:
+
+- Muestra resultados actualizados de la categoria completa.
+- Incluye ganador y detalle de sets.
+- No limita el resultado solo a partidos del equipo del jugador, porque la historia requiere seguir la categoria.
+
+Respuestas relevantes: `200`, `401`, `403`, `404`.
+
+### Consultar posiciones de mis categorias
+
+```http
+GET /api/v1/portal/jugador/posiciones
+```
+
+Respuesta: tabla completa de posiciones por cada categoria de campeonato donde participa el jugador.
+
+Notas:
+
+- Recalcula la tabla antes de responder.
+- Devuelve `posicionEquipo` para identificar la posicion del equipo del jugador.
+- Incluye la clasificacion completa de la categoria.
+
+Respuestas relevantes: `200`, `401`, `403`, `404`.
+
+## Reportes
+
+Todos los endpoints de reportes requieren JWT valido con rol `ORGANIZADOR`.
+
+### Reporte de equipos
+
+```http
+GET /api/v1/reportes/equipos
+GET /api/v1/reportes/equipos?campeonatoId={campeonatoId}
+GET /api/v1/reportes/equipos?campeonatoCategoriaId={campeonatoCategoriaId}
+```
+
+Respuesta: equipos agrupados por categoria de campeonato.
+
+Campos principales:
+
+- `totalEquipos`
+- `totalJugadoresActivos`
+- `equipos[].cantidadJugadoresActivos`
+
+Respuestas relevantes: `200`, `401`, `403`.
+
+### Reporte de jugadores
+
+```http
+GET /api/v1/reportes/jugadores
+GET /api/v1/reportes/jugadores?campeonatoId={campeonatoId}
+GET /api/v1/reportes/jugadores?campeonatoCategoriaId={campeonatoCategoriaId}
+GET /api/v1/reportes/jugadores?equipoId={equipoId}
+```
+
+Respuesta: jugadores agrupados por categoria y equipo.
+
+Notas:
+
+- Los datos personales se enriquecen desde `personas-service` usando `idPersona`.
+- Si `personas-service` no responde, el reporte mantiene la estructura deportiva y deja vacios los datos personales.
+
+Respuestas relevantes: `200`, `401`, `403`.
+
+### Reporte de resultados
+
+```http
+GET /api/v1/reportes/resultados
+GET /api/v1/reportes/resultados?campeonatoCategoriaId={campeonatoCategoriaId}
+GET /api/v1/reportes/resultados?fechaDesde=2026-06-01&fechaHasta=2026-06-30
+```
+
+Respuesta: resultados con campeonato, categoria, equipos, ganador y detalle de sets.
+
+Filtros:
+
+- `campeonatoCategoriaId`
+- `fechaDesde`
+- `fechaHasta`
+
+Respuestas relevantes: `200`, `401`, `403`.
+
+### Reporte de posiciones
+
+```http
+GET /api/v1/reportes/posiciones
+GET /api/v1/reportes/posiciones?campeonatoId={campeonatoId}
+GET /api/v1/reportes/posiciones?campeonatoCategoriaId={campeonatoCategoriaId}
+```
+
+Respuesta: ranking por categoria de campeonato.
+
+Notas:
+
+- Recalcula cada tabla antes de responder.
+- La respuesta queda preparada para exportacion futura desde frontend o un endpoint dedicado.
+
+Respuestas relevantes: `200`, `401`, `403`.
+
 ## Datos de prueba
 
 ### Generar datos realistas

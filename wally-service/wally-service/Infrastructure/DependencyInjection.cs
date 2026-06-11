@@ -11,6 +11,8 @@ using WallyBallBackend.Application.Equipos;
 using WallyBallBackend.Application.Fixture;
 using WallyBallBackend.Application.Jugadores;
 using WallyBallBackend.Application.Posiciones;
+using WallyBallBackend.Application.PortalJugador;
+using WallyBallBackend.Application.Reportes;
 using WallyBallBackend.Application.Resultados;
 using WallyBallBackend.Infrastructure.Authentication;
 using WallyBallBackend.Infrastructure.Campeonatos;
@@ -23,6 +25,8 @@ using WallyBallBackend.Infrastructure.Persistence.Cassandra;
 using WallyBallBackend.Infrastructure.Persistence.SqlServer;
 using WallyBallBackend.Infrastructure.Personas;
 using WallyBallBackend.Infrastructure.Posiciones;
+using WallyBallBackend.Infrastructure.PortalJugador;
+using WallyBallBackend.Infrastructure.Reportes;
 using WallyBallBackend.Infrastructure.Resultados;
 
 namespace WallyBallBackend.Infrastructure;
@@ -67,6 +71,8 @@ public static class DependencyInjection
         services.AddScoped<IFixtureService, FixtureService>();
         services.AddScoped<IJugadorService, JugadorService>();
         services.AddScoped<IPosicionService, PosicionService>();
+        services.AddScoped<IPortalJugadorService, PortalJugadorService>();
+        services.AddScoped<IReporteService, ReporteService>();
         services.AddScoped<IResultadoService, ResultadoService>();
 
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
