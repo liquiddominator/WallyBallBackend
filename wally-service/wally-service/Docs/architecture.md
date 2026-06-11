@@ -1,6 +1,6 @@
 # Arquitectura Wally Service
 
-`wally-service` es el microservicio de dominio deportivo. Expone endpoints para campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones, portal del jugador y reportes.
+`wally-service` es el microservicio de dominio deportivo. Expone endpoints para campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones y portal del jugador.
 
 Personas, identidad y autenticacion viven en `personas-service`; este servicio solo valida tokens JWT emitidos por personas-service.
 
@@ -9,7 +9,7 @@ Personas, identidad y autenticacion viven en `personas-service`; este servicio s
 - `Api`: controladores, contratos HTTP, versionado de rutas y respuestas.
 - `Application`: casos de uso, validaciones, DTOs, puertos y servicios de aplicacion.
 - `Domain`: entidades y reglas de negocio del campeonato.
-- `Infrastructure`: EF Core, SQL Server, Cassandra, validacion JWT, servicios externos y configuracion.
+- `Infrastructure`: EF Core, SQL Server, validacion JWT, servicios externos y configuracion.
 - `Docs`: documentacion funcional y tecnica.
 
 ## Modulos Funcionales
@@ -22,23 +22,17 @@ Personas, identidad y autenticacion viven en `personas-service`; este servicio s
 - Resultados: registrar, modificar y auditar resultados.
 - Posiciones: actualizar automaticamente y consultar tablas.
 - Portal del jugador: consultar fixture personal, resultados y posiciones.
-- Reportes: equipos, jugadores, resultados y posiciones.
+- Reportes: pertenecen a `reportes-service` y se respaldan en Cassandra.
 
 ## Persistencia
 
 - SQL Server: fuente transaccional principal mediante EF Core. Contiene entidades normalizadas del dominio deportivo.
-- Cassandra: almacenamiento orientado a consultas denormalizadas para lecturas rapidas por categoria, equipo o jugador.
+- Cassandra no se usa en `wally-service`; las proyecciones de reportes pertenecen a `reportes-service`.
 
 Script relacional planificado:
 
 ```text
 wally-service/docs/database/sqlserver/WallyBallDbScript.txt
-```
-
-Script Cassandra planificado:
-
-```text
-wally-service/docs/database/cassandra/WallyBallCassandraScript.txt
 ```
 
 ## Contenedores
@@ -47,10 +41,7 @@ El entorno Docker standalone de este servicio incluye:
 
 - `api`: API ASP.NET Core expuesta en `http://localhost:5167`.
 - `sqlserver`: base relacional de dominio `WallyBallDb`.
-- `cassandra`: base NoSQL para consultas denormalizadas.
-- `cassandra-init`: inicializador del keyspace `wallyball`.
-
-En una orquestacion de microservicios, este servicio debe convivir con `personas-service` y validar los JWT emitidos por ese servicio.
+En una orquestacion de microservicios, este servicio debe convivir con `personas-service`, `reportes-service` y validar los JWT emitidos por `personas-service`.
 
 ## Versionado y Rutas
 

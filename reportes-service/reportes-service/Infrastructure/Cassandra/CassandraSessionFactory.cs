@@ -1,7 +1,7 @@
 using Cassandra;
 using Microsoft.Extensions.Options;
 
-namespace WallyBallBackend.Infrastructure.Persistence.Cassandra;
+namespace ReportesService.Infrastructure.Cassandra;
 
 public sealed class CassandraSessionFactory : ICassandraSessionFactory
 {

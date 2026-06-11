@@ -6,7 +6,7 @@ Este documento describe dependencias, servicios externos y configuracion de `wal
 
 - .NET SDK 10: necesario para compilar y ejecutar el proyecto.
 - ASP.NET Core Web API: framework base para endpoints HTTP.
-- Docker Desktop o Docker Engine: necesario para ejecutar API, SQL Server y Cassandra con `docker compose`.
+- Docker Desktop o Docker Engine: necesario para ejecutar API y SQL Server con `docker compose`.
 
 ## Dependencias NuGet Instaladas
 
@@ -14,7 +14,6 @@ Este documento describe dependencias, servicios externos y configuracion de `wal
 - `Microsoft.EntityFrameworkCore.SqlServer`: proveedor EF Core para SQL Server.
 - `Microsoft.EntityFrameworkCore.Design`: herramientas de diseno EF Core.
 - `Microsoft.EntityFrameworkCore.Tools`: comandos EF Core.
-- `CassandraCSharpDriver`: driver para Apache Cassandra.
 - `Microsoft.AspNetCore.Authentication.JwtBearer`: middleware para validar JWT emitidos por `personas-service`.
 - `System.IdentityModel.Tokens.Jwt`: utilidades para validar JWT.
 - `FluentValidation.DependencyInjectionExtensions`: registro automatico de validadores.
@@ -40,26 +39,6 @@ Cadena de conexion local:
 "SqlServer": "Server=localhost,1433;Database=WallyBallDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True;Encrypt=False"
 ```
 
-### Apache Cassandra
-
-Uso previsto:
-
-- Consultas denormalizadas de fixture por categoria.
-- Consultas denormalizadas de fixture por equipo.
-- Consultas denormalizadas de fixture por jugador.
-- Resultados por categoria.
-- Posiciones por categoria.
-
-Configuracion local:
-
-```json
-"Cassandra": {
-  "ContactPoints": [ "localhost" ],
-  "Port": 9042,
-  "Keyspace": "wallyball"
-}
-```
-
 ### Personas Service
 
 Uso previsto:
@@ -82,7 +61,6 @@ Secciones principales:
 
 - `ConnectionStrings:SqlServer`: conexion a SQL Server.
 - `Jwt`: parametros para validar tokens emitidos por personas-service.
-- `Cassandra`: nodos, puerto y keyspace.
 - `Serilog`: nivel y destino de logs.
 
 ## Configuracion Docker
@@ -97,7 +75,6 @@ Archivos:
 Dentro de Docker, la API usa nombres de servicio:
 
 - SQL Server: `sqlserver`
-- Cassandra: `cassandra`
 
 Variables principales:
 
@@ -105,7 +82,6 @@ Variables principales:
 ASPNETCORE_ENVIRONMENT=Docker
 ASPNETCORE_URLS=http://+:8080
 ConnectionStrings__SqlServer=Server=sqlserver,1433;Database=WallyBallDb;...
-Cassandra__ContactPoints__0=cassandra
 ```
 
 ## Endpoints Base

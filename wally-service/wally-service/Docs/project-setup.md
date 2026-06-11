@@ -2,7 +2,7 @@
 
 ## Descripcion
 
-`wally-service` es una API ASP.NET Core para gestionar el dominio deportivo de campeonatos de wallyball del Deportivo Agape. Contempla administracion de campeonatos, categorias, equipos, jugadores, fixture, resultados, tabla de posiciones, portal de consulta para jugadores y reportes.
+`wally-service` es una API ASP.NET Core para gestionar el dominio deportivo de campeonatos de wallyball del Deportivo Agape. Contempla administracion de campeonatos, categorias, equipos, jugadores, fixture, resultados, tabla de posiciones y portal de consulta para jugadores.
 
 La autenticacion, usuarios, roles y refresh tokens pertenecen a `personas-service`.
 
@@ -10,7 +10,6 @@ La autenticacion, usuarios, roles y refresh tokens pertenecen a `personas-servic
 
 - .NET SDK 10 o compatible con `net10.0`.
 - SQL Server local o en Docker.
-- Apache Cassandra local o en Docker.
 - Un JWT valido emitido por `personas-service` para probar endpoints protegidos.
 - Un cliente HTTP como navegador, Postman, Insomnia o REST Client.
 
@@ -19,7 +18,7 @@ La autenticacion, usuarios, roles y refresh tokens pertenecen a `personas-servic
 - `Api`: endpoints HTTP versionados.
 - `Application`: casos de uso y validaciones.
 - `Domain`: entidades y reglas del negocio deportivo.
-- `Infrastructure`: bases de datos, validacion JWT, Cassandra y servicios externos.
+- `Infrastructure`: SQL Server, validacion JWT y servicios externos.
 - `Docs`: documentacion funcional y tecnica.
 
 Documento de estructura:
@@ -42,8 +41,6 @@ Revisar `wally-service/appsettings.Development.json` y ajustar:
 - `Jwt:Issuer`
 - `Jwt:Audience`
 - `Jwt:SigningKey`
-- `Cassandra:ContactPoints`
-- `Cassandra:Keyspace`
 
 La configuracion JWT debe coincidir con la configuracion usada por `personas-service` para emitir tokens.
 
@@ -83,9 +80,6 @@ Servicios incluidos:
 
 - `api`: API ASP.NET Core publicada en el puerto local `5167`.
 - `sqlserver`: SQL Server 2022 Developer en el puerto local `1433`.
-- `cassandra`: Apache Cassandra en el puerto local `9042`.
-- `cassandra-init`: crea el keyspace `wallyball` si no existe.
-
 En entorno `Docker`, la API aplica automaticamente las migraciones EF Core de SQL Server al iniciar.
 
 ## OpenAPI
@@ -253,22 +247,6 @@ dotnet tool run dotnet-ef database update `
   --context AppDbContext
 ```
 
-## Cassandra
-
-Cassandra se usa para consultas optimizadas por categoria, equipo y jugador:
-
-- `fixture_by_categoria`
-- `fixture_by_equipo`
-- `fixture_by_jugador`
-- `resultados_by_categoria`
-- `posiciones_by_categoria`
-
-Script CQL documentado:
-
-```text
-wally-service/docs/database/cassandra/WallyBallCassandraScript.txt
-```
-
 ## Estado Actual
 
 El entorno incluye:
@@ -278,10 +256,10 @@ El entorno incluye:
 - Entidades principales del dominio deportivo.
 - `AppDbContext` para SQL Server.
 - Migraciones EF Core.
-- Factory de sesion para Cassandra.
 - Validacion JWT configurada.
 - Swagger UI con autorizacion Bearer JWT.
-- Epicas 2 a 10 implementadas: campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones, portal del jugador y reportes.
+- Epicas 2 a 9 implementadas en `wally-service`: campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones y portal del jugador.
+- La epica 10 de reportes vive en `reportes-service` y usa Cassandra como dependencia obligatoria.
 - Generacion de datos realistas con Bogus para ambientes de desarrollo y Docker.
 
 ## Siguientes Pasos Recomendados

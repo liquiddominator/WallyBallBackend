@@ -1,4 +1,4 @@
-namespace WallyBallBackend.Infrastructure.Persistence.Cassandra;
+namespace ReportesService.Infrastructure.Cassandra;
 
 public sealed class CassandraOptions
 {
@@ -8,5 +8,5 @@ public sealed class CassandraOptions
 
     public int Port { get; set; } = 9042;
 
-    public string Keyspace { get; set; } = "wallyball";
+    public string Keyspace { get; set; } = "wallyball_reportes";
 }

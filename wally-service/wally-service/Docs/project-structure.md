@@ -18,7 +18,6 @@ wally-service/
     |   `-- Entities/
     |-- Infrastructure/
     |   |-- Persistence/
-    |   |   |-- Cassandra/
     |   |   `-- SqlServer/
     |   |       |-- Migrations/
     |   |       |-- AppDbContext.cs
@@ -27,9 +26,6 @@ wally-service/
     |-- Properties/
     |-- Docs/
     |   |-- database/
-    |   |   |-- cassandra/
-    |   |   |   |-- database.md
-    |   |   |   `-- WallyBallCassandraScript.txt
     |   |   `-- sqlserver/
     |   |       |-- database.md
     |   |       `-- WallyBallDbScript.txt
@@ -51,7 +47,7 @@ wally-service/
 ## Archivos Importantes
 
 - `.dockerignore`: define archivos y carpetas excluidos del contexto Docker.
-- `docker-compose.yml`: orquesta API, SQL Server, Cassandra e inicializacion de Cassandra para desarrollo standalone.
+- `docker-compose.yml`: orquesta API y SQL Server para desarrollo standalone.
 - `dotnet-tools.json`: manifiesto de herramientas locales, incluyendo `dotnet-ef`.
 - `wally-service.slnx`: solucion del servicio.
 - `wally-service/Dockerfile`: construccion de la imagen de la API.

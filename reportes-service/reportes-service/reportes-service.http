@@ -1,0 +1,26 @@
+@ReportesService_HostAddress = http://localhost:5187
+@AccessToken = paste-token-here
+
+GET {{ReportesService_HostAddress}}/api/v1/reportes/equipos
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{ReportesService_HostAddress}}/api/v1/reportes/jugadores
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{ReportesService_HostAddress}}/api/v1/reportes/resultados?fechaDesde=2026-06-01&fechaHasta=2026-06-30
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{ReportesService_HostAddress}}/api/v1/reportes/posiciones
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###

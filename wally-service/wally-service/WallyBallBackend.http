@@ -265,30 +265,6 @@ Accept: application/json
 
 ###
 
-GET {{WallyBallBackend_HostAddress}}/api/v1/reportes/equipos
-Authorization: Bearer {{AccessToken}}
-Accept: application/json
-
-###
-
-GET {{WallyBallBackend_HostAddress}}/api/v1/reportes/jugadores
-Authorization: Bearer {{AccessToken}}
-Accept: application/json
-
-###
-
-GET {{WallyBallBackend_HostAddress}}/api/v1/reportes/resultados?fechaDesde=2026-06-01&fechaHasta=2026-06-30
-Authorization: Bearer {{AccessToken}}
-Accept: application/json
-
-###
-
-GET {{WallyBallBackend_HostAddress}}/api/v1/reportes/posiciones
-Authorization: Bearer {{AccessToken}}
-Accept: application/json
-
-###
-
 POST {{WallyBallBackend_HostAddress}}/api/v1/dev/datos-prueba
 Authorization: Bearer {{AccessToken}}
 Content-Type: application/json

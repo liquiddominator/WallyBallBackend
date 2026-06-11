@@ -1,6 +1,6 @@
 # Wally Service - Contexto Funcional
 
-`wally-service` es el microservicio de dominio deportivo del sistema WallyBall para administrar campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones, portal de consulta y reportes.
+`wally-service` es el microservicio de dominio deportivo del sistema WallyBall para administrar campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones y portal de consulta.
 
 Personas, autenticacion, refresh tokens, usuarios y roles pertenecen a `personas-service`.
 
@@ -10,7 +10,7 @@ Construir una API de dominio para administrar campeonatos de wallyball del Depor
 
 ## Roles Consumidos
 
-- `ORGANIZADOR`: administra campeonatos, categorias, equipos, jugadores, fixture, resultados y reportes.
+- `ORGANIZADOR`: administra campeonatos, categorias, equipos, jugadores, fixture y resultados.
 - `JUGADOR`: consulta fixture personal, resultados y tabla de posiciones.
 - `Sistema`: actualiza posiciones automaticamente cuando se registran resultados.
 
@@ -27,7 +27,7 @@ Construir una API de dominio para administrar campeonatos de wallyball del Depor
 - Registro y modificacion de resultados.
 - Actualizacion automatica de tabla de posiciones.
 - Consultas para portal del jugador.
-- Reportes de equipos, jugadores, resultados y posiciones.
+- Reportes de equipos, jugadores, resultados y posiciones pertenecen a `reportes-service`.
 
 ## Fuera de Alcance
 
@@ -327,6 +327,8 @@ Criterios de aceptacion:
 - Debe mostrar posicion de su equipo.
 
 ### Epica 10: Reportes
+
+Esta epica se implementa en `reportes-service`, usando Cassandra como almacenamiento obligatorio de reportes. `wally-service` conserva la fuente transaccional del dominio deportivo en SQL Server.
 
 #### HU-24: Reporte de equipos
 

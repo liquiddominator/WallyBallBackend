@@ -558,78 +558,9 @@ Respuestas relevantes: `200`, `401`, `403`, `404`.
 
 ## Reportes
 
-Todos los endpoints de reportes requieren JWT valido con rol `ORGANIZADOR`.
+Los reportes ya no pertenecen a `wally-service`. Se exponen desde `reportes-service` y se respaldan obligatoriamente en Cassandra.
 
-### Reporte de equipos
-
-```http
-GET /api/v1/reportes/equipos
-GET /api/v1/reportes/equipos?campeonatoId={campeonatoId}
-GET /api/v1/reportes/equipos?campeonatoCategoriaId={campeonatoCategoriaId}
-```
-
-Respuesta: equipos agrupados por categoria de campeonato.
-
-Campos principales:
-
-- `totalEquipos`
-- `totalJugadoresActivos`
-- `equipos[].cantidadJugadoresActivos`
-
-Respuestas relevantes: `200`, `401`, `403`.
-
-### Reporte de jugadores
-
-```http
-GET /api/v1/reportes/jugadores
-GET /api/v1/reportes/jugadores?campeonatoId={campeonatoId}
-GET /api/v1/reportes/jugadores?campeonatoCategoriaId={campeonatoCategoriaId}
-GET /api/v1/reportes/jugadores?equipoId={equipoId}
-```
-
-Respuesta: jugadores agrupados por categoria y equipo.
-
-Notas:
-
-- Los datos personales se enriquecen desde `personas-service` usando `idPersona`.
-- Si `personas-service` no responde, el reporte mantiene la estructura deportiva y deja vacios los datos personales.
-
-Respuestas relevantes: `200`, `401`, `403`.
-
-### Reporte de resultados
-
-```http
-GET /api/v1/reportes/resultados
-GET /api/v1/reportes/resultados?campeonatoCategoriaId={campeonatoCategoriaId}
-GET /api/v1/reportes/resultados?fechaDesde=2026-06-01&fechaHasta=2026-06-30
-```
-
-Respuesta: resultados con campeonato, categoria, equipos, ganador y detalle de sets.
-
-Filtros:
-
-- `campeonatoCategoriaId`
-- `fechaDesde`
-- `fechaHasta`
-
-Respuestas relevantes: `200`, `401`, `403`.
-
-### Reporte de posiciones
-
-```http
-GET /api/v1/reportes/posiciones
-GET /api/v1/reportes/posiciones?campeonatoId={campeonatoId}
-GET /api/v1/reportes/posiciones?campeonatoCategoriaId={campeonatoCategoriaId}
-```
-
-Respuesta: ranking por categoria de campeonato.
-
-Notas:
-
-- Recalcula cada tabla antes de responder.
-- La respuesta queda preparada para exportacion futura desde frontend o un endpoint dedicado.
-
-Respuestas relevantes: `200`, `401`, `403`.
+Ver `reportes-service/reportes-service/Docs/api-endpoints.md`.
 
 ## Datos de prueba
 

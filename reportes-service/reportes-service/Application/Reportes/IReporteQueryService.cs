@@ -1,25 +1,25 @@
-namespace WallyBallBackend.Application.Reportes;
+namespace ReportesService.Application.Reportes;
 
-public interface IReporteService
+public interface IReporteQueryService
 {
-    Task<IReadOnlyCollection<ReporteEquiposCategoriaResponse>> GetReporteEquiposAsync(
+    Task<IReadOnlyCollection<ReporteEquiposCategoriaResponse>> GetEquiposAsync(
         int? campeonatoId,
         int? campeonatoCategoriaId,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyCollection<ReporteJugadoresCategoriaResponse>> GetReporteJugadoresAsync(
+    Task<IReadOnlyCollection<ReporteJugadoresCategoriaResponse>> GetJugadoresAsync(
         int? campeonatoId,
         int? campeonatoCategoriaId,
         int? equipoId,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyCollection<ReporteResultadoResponse>> GetReporteResultadosAsync(
+    Task<IReadOnlyCollection<ReporteResultadoResponse>> GetResultadosAsync(
         int? campeonatoCategoriaId,
         DateOnly? fechaDesde,
         DateOnly? fechaHasta,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyCollection<ReportePosicionesCategoriaResponse>> GetReportePosicionesAsync(
+    Task<IReadOnlyCollection<ReportePosicionesCategoriaResponse>> GetPosicionesAsync(
         int? campeonatoId,
         int? campeonatoCategoriaId,
         CancellationToken cancellationToken);

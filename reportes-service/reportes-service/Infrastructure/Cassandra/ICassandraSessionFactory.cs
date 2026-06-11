@@ -1,4 +1,4 @@
-namespace WallyBallBackend.Infrastructure.Persistence.Cassandra;
+namespace ReportesService.Infrastructure.Cassandra;
 
 public interface ICassandraSessionFactory
 {

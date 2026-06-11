@@ -1,0 +1,56 @@
+services:
+  reportes-api:
+    build:
+      context: .
+      dockerfile: reportes-service/Dockerfile
+    container_name: reportes-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+      Cassandra__ContactPoints__0: reportes-cassandra
+      Cassandra__Port: 9042
+      Cassandra__Keyspace: wallyball_reportes
+      Jwt__Issuer: PersonasService
+      Jwt__Audience: WallyBallClients
+      Jwt__SigningKey: development-signing-key-change-before-production-32
+    ports:
+      - "5187:8080"
+    depends_on:
+      - reportes-cassandra
+    networks:
+      - reportes-network
+
+  reportes-cassandra:
+    image: cassandra:5.0
+    container_name: reportes-cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: WallyBallReportesCluster
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    ports:
+      - "9042:9042"
+    volumes:
+      - reportes-cassandra-data:/var/lib/cassandra
+    networks:
+      - reportes-network
+
+  reportes-cassandra-init:
+    image: cassandra:5.0
+    container_name: reportes-cassandra-init
+    depends_on:
+      - reportes-cassandra
+    volumes:
+      - ./reportes-service/Docs/database/cassandra/ReportesCassandraScript.cql:/scripts/ReportesCassandraScript.cql:ro
+    command: >
+      sh -c "sleep 45 &&
+      cqlsh reportes-cassandra 9042 -f /scripts/ReportesCassandraScript.cql"
+    restart: "no"
+    networks:
+      - reportes-network
+
+networks:
+  reportes-network:
+    driver: bridge
+
+volumes:
+  reportes-cassandra-data:
