@@ -1,0 +1,162 @@
+@WallyBallBackend_HostAddress = http://localhost:5167
+@AccessToken = reemplazar-con-token
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/campeonatos
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/campeonatos/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/campeonatos
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Campeonato Apertura 2026",
+  "fechaInicio": "2026-07-01",
+  "fechaFin": "2026-08-31"
+}
+
+###
+
+PUT {{WallyBallBackend_HostAddress}}/api/v1/campeonatos/1
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Campeonato Apertura 2026 Actualizado",
+  "fechaInicio": "2026-07-01",
+  "fechaFin": "2026-09-05"
+}
+
+###
+
+PATCH {{WallyBallBackend_HostAddress}}/api/v1/campeonatos/1/finalizar
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/categorias
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/categorias?campeonatoId=1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/campeonatos/1/categorias
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/categorias/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/categorias
+Authorization: Bearer {{AccessToken}}
+IdCampeonato: 1
+Content-Type: application/json
+
+{
+  "nombre": "Infantil"
+}
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/jugadores
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/jugadores?termino=Carlos
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/jugadores?cedula=1234567
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/jugadores/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/jugadores
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "cedula": "1234567",
+  "nombre": "Carlos",
+  "apellido": "Perez",
+  "telefono": "70000000",
+  "fechaNacimiento": "2001-05-10"
+}
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/equipos/1/jugadores
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/equipos/1/jugadores
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "idJugador": 1
+}
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/campeonatos-categorias/1/fixture
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/campeonatos-categorias/1/fixture/generar
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "fechaPrimeraJornada": "2026-07-06",
+  "diasEntreJornadas": 7,
+  "horaPartidos": "20:00:00"
+}
+
+###
+
+PATCH {{WallyBallBackend_HostAddress}}/api/v1/partidos/1/reprogramar
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "fechaHoraNueva": "2026-07-08T20:30:00Z",
+  "motivo": "Cambio de disponibilidad de cancha"
+}
+
+###

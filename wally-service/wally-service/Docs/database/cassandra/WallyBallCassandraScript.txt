@@ -1,0 +1,136 @@
+/* ============================================================
+   KEYSPACE: wallyball
+   Motor: Apache Cassandra
+   Proyecto: Sistema de Gestion de Campeonatos de Wallyball
+   Modelo: Lectura denormalizada por consulta
+   ============================================================ */
+
+CREATE KEYSPACE IF NOT EXISTS wallyball
+WITH replication = {
+  'class': 'SimpleStrategy',
+  'replication_factor': 1
+};
+
+USE wallyball;
+
+/* ============================================================
+   Fixture por categoria
+   Consulta: Ver fixture completo de una categoria ordenado por fecha.
+   ============================================================ */
+
+CREATE TABLE IF NOT EXISTS fixture_by_categoria (
+  categoria_id int,
+  fecha_partido timestamp,
+  partido_id int,
+  campeonato_id int,
+  campeonato_nombre text,
+  categoria_nombre text,
+  fase text,
+  jornada_numero int,
+  equipo_local_id int,
+  equipo_local text,
+  equipo_visitante_id int,
+  equipo_visitante text,
+  estado text,
+  PRIMARY KEY ((categoria_id), fecha_partido, partido_id)
+) WITH CLUSTERING ORDER BY (fecha_partido ASC, partido_id ASC);
+
+/* ============================================================
+   Fixture por equipo
+   Consulta: Ver partidos de un equipo ordenados por fecha.
+   ============================================================ */
+
+CREATE TABLE IF NOT EXISTS fixture_by_equipo (
+  equipo_id int,
+  fecha_partido timestamp,
+  partido_id int,
+  categoria_id int,
+  categoria_nombre text,
+  fase text,
+  jornada_numero int,
+  equipo_local_id int,
+  equipo_local text,
+  equipo_visitante_id int,
+  equipo_visitante text,
+  rival_id int,
+  rival_nombre text,
+  condicion text,
+  estado text,
+  PRIMARY KEY ((equipo_id), fecha_partido, partido_id)
+) WITH CLUSTERING ORDER BY (fecha_partido ASC, partido_id ASC);
+
+/* ============================================================
+   Fixture por jugador
+   Consulta: Ver proximos partidos del jugador desde su equipo.
+   ============================================================ */
+
+CREATE TABLE IF NOT EXISTS fixture_by_jugador (
+  jugador_id int,
+  fecha_partido timestamp,
+  partido_id int,
+  equipo_id int,
+  equipo_nombre text,
+  categoria_id int,
+  categoria_nombre text,
+  fase text,
+  jornada_numero int,
+  equipo_local_id int,
+  equipo_local text,
+  equipo_visitante_id int,
+  equipo_visitante text,
+  estado text,
+  PRIMARY KEY ((jugador_id), fecha_partido, partido_id)
+) WITH CLUSTERING ORDER BY (fecha_partido ASC, partido_id ASC);
+
+/* ============================================================
+   Resultados por categoria
+   Consulta: Ver resultados de una categoria ordenados por fecha.
+   ============================================================ */
+
+CREATE TABLE IF NOT EXISTS resultados_by_categoria (
+  categoria_id int,
+  fecha_resultado timestamp,
+  partido_id int,
+  resultado_id int,
+  campeonato_id int,
+  campeonato_nombre text,
+  categoria_nombre text,
+  fase text,
+  jornada_numero int,
+  equipo_local_id int,
+  equipo_local text,
+  equipo_visitante_id int,
+  equipo_visitante text,
+  sets_local int,
+  sets_visitante int,
+  equipo_ganador_id int,
+  equipo_ganador text,
+  estado_partido text,
+  PRIMARY KEY ((categoria_id), fecha_resultado, partido_id)
+) WITH CLUSTERING ORDER BY (fecha_resultado DESC, partido_id ASC);
+
+/* ============================================================
+   Posiciones por categoria
+   Consulta: Ver tabla de posiciones de una categoria ya ordenada.
+   La posicion debe calcularse en SQL Server o en el servicio de sincronizacion.
+   ============================================================ */
+
+CREATE TABLE IF NOT EXISTS posiciones_by_categoria (
+  categoria_id int,
+  posicion int,
+  equipo_id int,
+  categoria_nombre text,
+  equipo_nombre text,
+  partidos_jugados int,
+  ganados int,
+  perdidos int,
+  sets_favor int,
+  sets_contra int,
+  diferencia_sets int,
+  puntos_favor int,
+  puntos_contra int,
+  diferencia_puntos int,
+  puntos int,
+  fecha_actualizacion timestamp,
+  PRIMARY KEY ((categoria_id), posicion, equipo_id)
+) WITH CLUSTERING ORDER BY (posicion ASC, equipo_id ASC);

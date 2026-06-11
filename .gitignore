@@ -1,0 +1,40 @@
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Test and coverage output
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Logs
+*.log
+logs/
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# Docker generated data
+**/data/
+**/.docker/
+

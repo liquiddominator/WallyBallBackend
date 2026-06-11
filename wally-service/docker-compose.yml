@@ -1,0 +1,78 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: wally-service/Dockerfile
+    container_name: wallyball-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=WallyBallDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True;Encrypt=False
+      Cassandra__ContactPoints__0: cassandra
+      Cassandra__Port: 9042
+      Cassandra__Keyspace: wallyball
+      Jwt__Issuer: IdentidadService
+      Jwt__Audience: WallyBallClients
+      Jwt__SigningKey: development-signing-key-change-before-production-32
+      Jwt__ExpirationMinutes: 120
+      Jwt__RefreshTokenExpirationDays: 7
+      Jwt__MaxFailedLoginAttempts: 5
+      Jwt__LockoutMinutes: 15
+    ports:
+      - "5167:8080"
+    depends_on:
+      - sqlserver
+      - cassandra
+    networks:
+      - wallyball-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: wallyball-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Your_password123
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - wallyball-network
+
+  cassandra:
+    image: cassandra:5.0
+    container_name: wallyball-cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: WallyBallCluster
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    networks:
+      - wallyball-network
+
+  cassandra-init:
+    image: cassandra:5.0
+    container_name: wallyball-cassandra-init
+    depends_on:
+      - cassandra
+    command: >
+      sh -c "sleep 45 &&
+      cqlsh cassandra 9042 -e \"
+      CREATE KEYSPACE IF NOT EXISTS wallyball
+      WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+      \""
+    restart: "no"
+    networks:
+      - wallyball-network
+
+networks:
+  wallyball-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  cassandra-data:

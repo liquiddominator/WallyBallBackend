@@ -1,0 +1,98 @@
+/* ============================================================
+   DATABASE: IdentidadDb
+   Motor: SQL Server
+   Servicio: identidad-service
+   ============================================================ */
+
+IF DB_ID(N'IdentidadDb') IS NULL
+BEGIN
+    CREATE DATABASE IdentidadDb;
+END;
+GO
+
+USE IdentidadDb;
+GO
+
+/* ============================================================
+   Limpieza para desarrollo
+   ============================================================ */
+
+DROP TABLE IF EXISTS RefreshTokens;
+DROP TABLE IF EXISTS UsuarioRol;
+DROP TABLE IF EXISTS Roles;
+DROP TABLE IF EXISTS Usuarios;
+GO
+
+/* ============================================================
+   Seguridad e identidad
+   ============================================================ */
+
+CREATE TABLE Usuarios (
+    IdUsuario INT IDENTITY(1,1) NOT NULL,
+    Email NVARCHAR(150) NOT NULL,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    NombreCompleto NVARCHAR(150) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Usuarios_Activo DEFAULT 1,
+    AccessFailedCount INT NOT NULL CONSTRAINT DF_Usuarios_AccessFailedCount DEFAULT 0,
+    LockoutEndUtc DATETIME2 NULL,
+    PasswordChangedAtUtc DATETIME2 NULL,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Usuarios_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Usuarios PRIMARY KEY (IdUsuario),
+    CONSTRAINT UQ_Usuarios_Email UNIQUE (Email)
+);
+GO
+
+CREATE TABLE Roles (
+    IdRol INT IDENTITY(1,1) NOT NULL,
+    Nombre NVARCHAR(50) NOT NULL,
+    Descripcion NVARCHAR(200) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Roles_Activo DEFAULT 1,
+
+    CONSTRAINT PK_Roles PRIMARY KEY (IdRol),
+    CONSTRAINT UQ_Roles_Nombre UNIQUE (Nombre)
+);
+GO
+
+CREATE TABLE UsuarioRol (
+    IdUsuarioRol INT IDENTITY(1,1) NOT NULL,
+    IdUsuario INT NOT NULL,
+    IdRol INT NOT NULL,
+    FechaAsignacion DATETIME2 NOT NULL CONSTRAINT DF_UsuarioRol_FechaAsignacion DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_UsuarioRol PRIMARY KEY (IdUsuarioRol),
+    CONSTRAINT FK_UsuarioRol_Usuarios FOREIGN KEY (IdUsuario) REFERENCES Usuarios(IdUsuario),
+    CONSTRAINT FK_UsuarioRol_Roles FOREIGN KEY (IdRol) REFERENCES Roles(IdRol),
+    CONSTRAINT UQ_UsuarioRol_Usuario_Rol UNIQUE (IdUsuario, IdRol)
+);
+GO
+
+CREATE TABLE RefreshTokens (
+    IdRefreshToken INT IDENTITY(1,1) NOT NULL,
+    IdUsuario INT NOT NULL,
+    TokenHash NVARCHAR(128) NOT NULL,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_RefreshTokens_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaExpiracion DATETIME2 NOT NULL,
+    FechaRevocacion DATETIME2 NULL,
+    ReemplazadoPorTokenHash NVARCHAR(128) NULL,
+
+    CONSTRAINT PK_RefreshTokens PRIMARY KEY (IdRefreshToken),
+    CONSTRAINT FK_RefreshTokens_Usuarios FOREIGN KEY (IdUsuario) REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT UQ_RefreshTokens_TokenHash UNIQUE (TokenHash)
+);
+GO
+
+CREATE INDEX IX_RefreshTokens_Usuario_Expiracion
+ON RefreshTokens (IdUsuario, FechaExpiracion);
+GO
+
+/* ============================================================
+   Datos iniciales
+   ============================================================ */
+
+INSERT INTO Roles (Nombre, Descripcion)
+VALUES
+('ORGANIZADOR', 'Usuario encargado de administrar usuarios, roles y credenciales.'),
+('JUGADOR', 'Usuario autenticado para consultar informacion deportiva permitida.');
+GO

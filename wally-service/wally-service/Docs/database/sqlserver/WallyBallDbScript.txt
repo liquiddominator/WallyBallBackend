@@ -1,0 +1,846 @@
+/* ============================================================
+   DATABASE: WallyBallDb
+   Motor: SQL Server
+   Servicio: wally-service
+   ============================================================ */
+
+IF DB_ID(N'WallyBallDb') IS NULL
+BEGIN
+    CREATE DATABASE WallyBallDb;
+END;
+GO
+
+USE WallyBallDb;
+GO
+
+/* ============================================================
+   Limpieza para desarrollo
+   ============================================================ */
+
+DROP VIEW IF EXISTS VW_ResultadosCompletos;
+DROP VIEW IF EXISTS VW_FixtureCompleto;
+DROP VIEW IF EXISTS VW_TablaPosicionesOrdenada;
+GO
+
+DROP TRIGGER IF EXISTS TRG_Resultados_Auditoria_Update;
+DROP TRIGGER IF EXISTS TRG_Resultados_RecalcularPosiciones;
+DROP TRIGGER IF EXISTS TRG_ResultadoSets_RecalcularPosiciones;
+DROP TRIGGER IF EXISTS TRG_Partidos_ValidarIntegridad;
+DROP TRIGGER IF EXISTS TRG_CampeonatosCategorias_BloquearCampeonatoFinalizado;
+DROP TRIGGER IF EXISTS TRG_Equipos_BloquearCampeonatoFinalizado;
+DROP TRIGGER IF EXISTS TRG_Resultados_BloquearCampeonatoFinalizado;
+DROP TRIGGER IF EXISTS TRG_Maximo12JugadoresPorEquipo;
+GO
+
+DROP PROCEDURE IF EXISTS SP_RecalcularTablaPosicionesCategoria;
+DROP PROCEDURE IF EXISTS SP_CrearTablaPosicionesCategoria;
+DROP PROCEDURE IF EXISTS SP_ReprogramarPartido;
+DROP PROCEDURE IF EXISTS SP_RegistrarResultado;
+GO
+
+DROP TABLE IF EXISTS AuditoriaResultados;
+DROP TABLE IF EXISTS ReprogramacionesPartido;
+DROP TABLE IF EXISTS TablaPosiciones;
+DROP TABLE IF EXISTS ResultadoSets;
+DROP TABLE IF EXISTS Resultados;
+DROP TABLE IF EXISTS Partidos;
+DROP TABLE IF EXISTS Jornadas;
+DROP TABLE IF EXISTS Fases;
+DROP TABLE IF EXISTS InscripcionesEquipoJugador;
+DROP TABLE IF EXISTS Equipos;
+DROP TABLE IF EXISTS CampeonatosCategorias;
+DROP TABLE IF EXISTS Categorias;
+DROP TABLE IF EXISTS Campeonatos;
+DROP TABLE IF EXISTS Jugadores;
+GO
+
+/* ============================================================
+   Jugadores
+   ============================================================ */
+
+CREATE TABLE Jugadores (
+    IdJugador INT IDENTITY(1,1) NOT NULL,
+    Cedula NVARCHAR(30) NOT NULL,
+    Nombre NVARCHAR(100) NOT NULL,
+    Apellido NVARCHAR(100) NOT NULL,
+    Telefono NVARCHAR(30) NULL,
+    FechaNacimiento DATE NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Jugadores_Activo DEFAULT 1,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Jugadores_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Jugadores PRIMARY KEY (IdJugador),
+    CONSTRAINT UQ_Jugadores_Cedula UNIQUE (Cedula)
+);
+GO
+
+/* ============================================================
+   Campeonatos, categorias y equipos
+   ============================================================ */
+
+CREATE TABLE Campeonatos (
+    IdCampeonato INT IDENTITY(1,1) NOT NULL,
+    Nombre NVARCHAR(150) NOT NULL,
+    FechaInicio DATE NOT NULL,
+    FechaFin DATE NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Campeonatos_Estado DEFAULT 'ACTIVO',
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Campeonatos_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Campeonatos PRIMARY KEY (IdCampeonato),
+    CONSTRAINT CK_Campeonatos_Estado CHECK (Estado IN ('BORRADOR', 'ACTIVO', 'FINALIZADO', 'CANCELADO')),
+    CONSTRAINT CK_Campeonatos_Fechas CHECK (FechaFin IS NULL OR FechaFin >= FechaInicio)
+);
+GO
+
+CREATE TABLE Categorias (
+    IdCategoria INT IDENTITY(1,1) NOT NULL,
+    Nombre NVARCHAR(80) NOT NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Categorias_Estado DEFAULT 'ACTIVA',
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Categorias_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Categorias PRIMARY KEY (IdCategoria),
+    CONSTRAINT UQ_Categorias_Nombre UNIQUE (Nombre),
+    CONSTRAINT CK_Categorias_Estado CHECK (Estado IN ('ACTIVA', 'INACTIVA'))
+);
+GO
+
+CREATE TABLE CampeonatosCategorias (
+    IdCampeonatoCategoria INT IDENTITY(1,1) NOT NULL,
+    IdCampeonato INT NOT NULL,
+    IdCategoria INT NOT NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_CampeonatosCategorias_Estado DEFAULT 'ACTIVA',
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_CampeonatosCategorias_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_CampeonatosCategorias PRIMARY KEY (IdCampeonatoCategoria),
+    CONSTRAINT FK_CampeonatosCategorias_Campeonatos FOREIGN KEY (IdCampeonato) REFERENCES Campeonatos(IdCampeonato),
+    CONSTRAINT FK_CampeonatosCategorias_Categorias FOREIGN KEY (IdCategoria) REFERENCES Categorias(IdCategoria),
+    CONSTRAINT UQ_CampeonatosCategorias_Campeonato_Categoria UNIQUE (IdCampeonato, IdCategoria),
+    CONSTRAINT CK_CampeonatosCategorias_Estado CHECK (Estado IN ('ACTIVA', 'INACTIVA'))
+);
+GO
+
+CREATE TABLE Equipos (
+    IdEquipo INT IDENTITY(1,1) NOT NULL,
+    IdCampeonatoCategoria INT NOT NULL,
+    Nombre NVARCHAR(120) NOT NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Equipos_Activo DEFAULT 1,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Equipos_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Equipos PRIMARY KEY (IdEquipo),
+    CONSTRAINT FK_Equipos_CampeonatosCategorias FOREIGN KEY (IdCampeonatoCategoria) REFERENCES CampeonatosCategorias(IdCampeonatoCategoria),
+    CONSTRAINT UQ_Equipos_CampeonatoCategoria_Nombre UNIQUE (IdCampeonatoCategoria, Nombre)
+);
+GO
+
+CREATE TABLE InscripcionesEquipoJugador (
+    IdInscripcion INT IDENTITY(1,1) NOT NULL,
+    IdEquipo INT NOT NULL,
+    IdJugador INT NOT NULL,
+    FechaInscripcion DATETIME2 NOT NULL CONSTRAINT DF_Inscripciones_FechaInscripcion DEFAULT SYSUTCDATETIME(),
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Inscripciones_Estado DEFAULT 'ACTIVO',
+
+    CONSTRAINT PK_InscripcionesEquipoJugador PRIMARY KEY (IdInscripcion),
+    CONSTRAINT FK_Inscripciones_Equipos FOREIGN KEY (IdEquipo) REFERENCES Equipos(IdEquipo),
+    CONSTRAINT FK_Inscripciones_Jugadores FOREIGN KEY (IdJugador) REFERENCES Jugadores(IdJugador),
+    CONSTRAINT UQ_Inscripciones_Equipo_Jugador UNIQUE (IdEquipo, IdJugador),
+    CONSTRAINT CK_Inscripciones_Estado CHECK (Estado IN ('ACTIVO', 'RETIRADO'))
+);
+GO
+
+/* ============================================================
+   Fixture
+   ============================================================ */
+
+CREATE TABLE Fases (
+    IdFase INT IDENTITY(1,1) NOT NULL,
+    IdCampeonatoCategoria INT NOT NULL,
+    Nombre NVARCHAR(80) NOT NULL,
+    Tipo NVARCHAR(30) NOT NULL,
+    Orden INT NOT NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Fases_Estado DEFAULT 'PENDIENTE',
+
+    CONSTRAINT PK_Fases PRIMARY KEY (IdFase),
+    CONSTRAINT FK_Fases_CampeonatosCategorias FOREIGN KEY (IdCampeonatoCategoria) REFERENCES CampeonatosCategorias(IdCampeonatoCategoria),
+    CONSTRAINT UQ_Fases_CampeonatoCategoria_Orden UNIQUE (IdCampeonatoCategoria, Orden),
+    CONSTRAINT CK_Fases_Tipo CHECK (Tipo IN ('ROUND_ROBIN', 'ELIMINATORIA')),
+    CONSTRAINT CK_Fases_Estado CHECK (Estado IN ('PENDIENTE', 'ACTIVA', 'FINALIZADA', 'CANCELADA'))
+);
+GO
+
+CREATE TABLE Jornadas (
+    IdJornada INT IDENTITY(1,1) NOT NULL,
+    IdFase INT NOT NULL,
+    NumeroJornada INT NOT NULL,
+    FechaProgramada DATE NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Jornadas_Estado DEFAULT 'PROGRAMADA',
+
+    CONSTRAINT PK_Jornadas PRIMARY KEY (IdJornada),
+    CONSTRAINT FK_Jornadas_Fases FOREIGN KEY (IdFase) REFERENCES Fases(IdFase),
+    CONSTRAINT UQ_Jornadas_Fase_Numero UNIQUE (IdFase, NumeroJornada),
+    CONSTRAINT CK_Jornadas_Numero CHECK (NumeroJornada > 0),
+    CONSTRAINT CK_Jornadas_Estado CHECK (Estado IN ('PROGRAMADA', 'FINALIZADA', 'CANCELADA'))
+);
+GO
+
+CREATE TABLE Partidos (
+    IdPartido INT IDENTITY(1,1) NOT NULL,
+    IdCampeonatoCategoria INT NOT NULL,
+    IdFase INT NOT NULL,
+    IdJornada INT NOT NULL,
+    IdEquipoLocal INT NOT NULL,
+    IdEquipoVisitante INT NOT NULL,
+    FechaHoraProgramada DATETIME2 NULL,
+    Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_Partidos_Estado DEFAULT 'PROGRAMADO',
+    EquipoMenor AS (CASE WHEN IdEquipoLocal < IdEquipoVisitante THEN IdEquipoLocal ELSE IdEquipoVisitante END) PERSISTED,
+    EquipoMayor AS (CASE WHEN IdEquipoLocal > IdEquipoVisitante THEN IdEquipoLocal ELSE IdEquipoVisitante END) PERSISTED,
+
+    CONSTRAINT PK_Partidos PRIMARY KEY (IdPartido),
+    CONSTRAINT FK_Partidos_CampeonatosCategorias FOREIGN KEY (IdCampeonatoCategoria) REFERENCES CampeonatosCategorias(IdCampeonatoCategoria),
+    CONSTRAINT FK_Partidos_Fases FOREIGN KEY (IdFase) REFERENCES Fases(IdFase),
+    CONSTRAINT FK_Partidos_Jornadas FOREIGN KEY (IdJornada) REFERENCES Jornadas(IdJornada),
+    CONSTRAINT FK_Partidos_EquipoLocal FOREIGN KEY (IdEquipoLocal) REFERENCES Equipos(IdEquipo),
+    CONSTRAINT FK_Partidos_EquipoVisitante FOREIGN KEY (IdEquipoVisitante) REFERENCES Equipos(IdEquipo),
+    CONSTRAINT CK_Partidos_EquiposDiferentes CHECK (IdEquipoLocal <> IdEquipoVisitante),
+    CONSTRAINT CK_Partidos_Estado CHECK (Estado IN ('PROGRAMADO', 'REPROGRAMADO', 'FINALIZADO', 'CANCELADO')),
+    CONSTRAINT UQ_Partidos_Fase_Enfrentamiento UNIQUE (IdFase, EquipoMenor, EquipoMayor)
+);
+GO
+
+CREATE INDEX IX_Partidos_Fase_Equipos
+ON Partidos (IdFase, IdEquipoLocal, IdEquipoVisitante);
+GO
+
+/* ============================================================
+   Resultados y posiciones
+   ============================================================ */
+
+CREATE TABLE Resultados (
+    IdResultado INT IDENTITY(1,1) NOT NULL,
+    IdPartido INT NOT NULL,
+    SetsLocal INT NOT NULL,
+    SetsVisitante INT NOT NULL,
+    IdEquipoGanador INT NOT NULL,
+    FechaRegistro DATETIME2 NOT NULL CONSTRAINT DF_Resultados_FechaRegistro DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Resultados PRIMARY KEY (IdResultado),
+    CONSTRAINT FK_Resultados_Partidos FOREIGN KEY (IdPartido) REFERENCES Partidos(IdPartido),
+    CONSTRAINT FK_Resultados_EquipoGanador FOREIGN KEY (IdEquipoGanador) REFERENCES Equipos(IdEquipo),
+    CONSTRAINT UQ_Resultados_Partido UNIQUE (IdPartido),
+    CONSTRAINT CK_Resultados_Sets CHECK (SetsLocal >= 0 AND SetsVisitante >= 0),
+    CONSTRAINT CK_Resultados_NoEmpate CHECK (SetsLocal <> SetsVisitante)
+);
+GO
+
+CREATE TABLE ResultadoSets (
+    IdResultadoSet INT IDENTITY(1,1) NOT NULL,
+    IdResultado INT NOT NULL,
+    NumeroSet INT NOT NULL,
+    PuntosLocal INT NOT NULL,
+    PuntosVisitante INT NOT NULL,
+
+    CONSTRAINT PK_ResultadoSets PRIMARY KEY (IdResultadoSet),
+    CONSTRAINT FK_ResultadoSets_Resultados FOREIGN KEY (IdResultado) REFERENCES Resultados(IdResultado) ON DELETE CASCADE,
+    CONSTRAINT UQ_ResultadoSets_Resultado_NumeroSet UNIQUE (IdResultado, NumeroSet),
+    CONSTRAINT CK_ResultadoSets_NumeroSet CHECK (NumeroSet > 0),
+    CONSTRAINT CK_ResultadoSets_Puntos CHECK (PuntosLocal >= 0 AND PuntosVisitante >= 0),
+    CONSTRAINT CK_ResultadoSets_NoEmpate CHECK (PuntosLocal <> PuntosVisitante)
+);
+GO
+
+CREATE TABLE TablaPosiciones (
+    IdPosicion INT IDENTITY(1,1) NOT NULL,
+    IdCampeonatoCategoria INT NOT NULL,
+    IdEquipo INT NOT NULL,
+    PartidosJugados INT NOT NULL CONSTRAINT DF_TablaPosiciones_PJ DEFAULT 0,
+    Ganados INT NOT NULL CONSTRAINT DF_TablaPosiciones_Ganados DEFAULT 0,
+    Perdidos INT NOT NULL CONSTRAINT DF_TablaPosiciones_Perdidos DEFAULT 0,
+    SetsFavor INT NOT NULL CONSTRAINT DF_TablaPosiciones_SetsFavor DEFAULT 0,
+    SetsContra INT NOT NULL CONSTRAINT DF_TablaPosiciones_SetsContra DEFAULT 0,
+    PuntosFavor INT NOT NULL CONSTRAINT DF_TablaPosiciones_PuntosFavor DEFAULT 0,
+    PuntosContra INT NOT NULL CONSTRAINT DF_TablaPosiciones_PuntosContra DEFAULT 0,
+    Puntos INT NOT NULL CONSTRAINT DF_TablaPosiciones_Puntos DEFAULT 0,
+    FechaActualizacion DATETIME2 NOT NULL CONSTRAINT DF_TablaPosiciones_FechaActualizacion DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_TablaPosiciones PRIMARY KEY (IdPosicion),
+    CONSTRAINT FK_TablaPosiciones_CampeonatosCategorias FOREIGN KEY (IdCampeonatoCategoria) REFERENCES CampeonatosCategorias(IdCampeonatoCategoria),
+    CONSTRAINT FK_TablaPosiciones_Equipos FOREIGN KEY (IdEquipo) REFERENCES Equipos(IdEquipo),
+    CONSTRAINT UQ_TablaPosiciones_CampeonatoCategoria_Equipo UNIQUE (IdCampeonatoCategoria, IdEquipo),
+    CONSTRAINT CK_TablaPosiciones_Valores CHECK (
+        PartidosJugados >= 0 AND Ganados >= 0 AND Perdidos >= 0 AND
+        SetsFavor >= 0 AND SetsContra >= 0 AND
+        PuntosFavor >= 0 AND PuntosContra >= 0 AND Puntos >= 0
+    )
+);
+GO
+
+CREATE TABLE AuditoriaResultados (
+    IdAuditoriaResultado INT IDENTITY(1,1) NOT NULL,
+    IdResultado INT NOT NULL,
+    IdPartido INT NOT NULL,
+    SetsLocalAnterior INT NOT NULL,
+    SetsVisitanteAnterior INT NOT NULL,
+    IdEquipoGanadorAnterior INT NOT NULL,
+    SetsLocalNuevo INT NOT NULL,
+    SetsVisitanteNuevo INT NOT NULL,
+    IdEquipoGanadorNuevo INT NOT NULL,
+    Motivo NVARCHAR(300) NULL,
+    FechaCambio DATETIME2 NOT NULL CONSTRAINT DF_AuditoriaResultados_FechaCambio DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_AuditoriaResultados PRIMARY KEY (IdAuditoriaResultado),
+    CONSTRAINT FK_AuditoriaResultados_Resultados FOREIGN KEY (IdResultado) REFERENCES Resultados(IdResultado)
+);
+GO
+
+CREATE TABLE ReprogramacionesPartido (
+    IdReprogramacion INT IDENTITY(1,1) NOT NULL,
+    IdPartido INT NOT NULL,
+    FechaHoraAnterior DATETIME2 NULL,
+    FechaHoraNueva DATETIME2 NOT NULL,
+    Motivo NVARCHAR(300) NULL,
+    FechaRegistro DATETIME2 NOT NULL CONSTRAINT DF_Reprogramaciones_FechaRegistro DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_ReprogramacionesPartido PRIMARY KEY (IdReprogramacion),
+    CONSTRAINT FK_Reprogramaciones_Partidos FOREIGN KEY (IdPartido) REFERENCES Partidos(IdPartido)
+);
+GO
+
+/* ============================================================
+   Triggers
+   ============================================================ */
+
+CREATE TRIGGER TRG_Maximo12JugadoresPorEquipo
+ON InscripcionesEquipoJugador
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT IdEquipo
+        FROM InscripcionesEquipoJugador
+        WHERE Estado = 'ACTIVO'
+        GROUP BY IdEquipo
+        HAVING COUNT(*) > 12
+    )
+    BEGIN
+        THROW 51000, 'Un equipo no puede tener mas de 12 jugadores activos.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER TRG_CampeonatosCategorias_BloquearCampeonatoFinalizado
+ON CampeonatosCategorias
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Campeonatos c ON i.IdCampeonato = c.IdCampeonato
+        WHERE c.Estado = 'FINALIZADO'
+    )
+    BEGIN
+        THROW 51001, 'No se pueden asociar categorias a un campeonato finalizado.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER TRG_Equipos_BloquearCampeonatoFinalizado
+ON Equipos
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN CampeonatosCategorias cc ON i.IdCampeonatoCategoria = cc.IdCampeonatoCategoria
+        INNER JOIN Campeonatos cam ON cc.IdCampeonato = cam.IdCampeonato
+        WHERE cam.Estado = 'FINALIZADO'
+    )
+    BEGIN
+        THROW 51002, 'No se pueden crear o modificar equipos de un campeonato finalizado.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER TRG_Partidos_ValidarIntegridad
+ON Partidos
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Equipos el ON i.IdEquipoLocal = el.IdEquipo
+        INNER JOIN Equipos ev ON i.IdEquipoVisitante = ev.IdEquipo
+        WHERE el.IdCampeonatoCategoria <> i.IdCampeonatoCategoria
+           OR ev.IdCampeonatoCategoria <> i.IdCampeonatoCategoria
+           OR el.IdCampeonatoCategoria <> ev.IdCampeonatoCategoria
+    )
+    BEGIN
+        THROW 51003, 'Los equipos del partido deben pertenecer a la categoria del campeonato del partido.', 1;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Fases f ON i.IdFase = f.IdFase
+        INNER JOIN Jornadas j ON i.IdJornada = j.IdJornada
+        WHERE f.IdCampeonatoCategoria <> i.IdCampeonatoCategoria
+           OR j.IdFase <> i.IdFase
+    )
+    BEGIN
+        THROW 51004, 'La fase y la jornada del partido deben pertenecer a la categoria/fase indicada.', 1;
+    END;
+
+    IF EXISTS (
+        SELECT IdJornada, IdEquipo
+        FROM (
+            SELECT IdPartido, IdJornada, IdEquipoLocal AS IdEquipo FROM Partidos
+            UNION ALL
+            SELECT IdPartido, IdJornada, IdEquipoVisitante AS IdEquipo FROM Partidos
+        ) equipos_jornada
+        GROUP BY IdJornada, IdEquipo
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        THROW 51005, 'Un equipo no puede jugar mas de una vez en la misma jornada.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER TRG_Resultados_BloquearCampeonatoFinalizado
+ON Resultados
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Partidos p ON i.IdPartido = p.IdPartido
+        INNER JOIN CampeonatosCategorias cc ON p.IdCampeonatoCategoria = cc.IdCampeonatoCategoria
+        INNER JOIN Campeonatos cam ON cc.IdCampeonato = cam.IdCampeonato
+        WHERE cam.Estado = 'FINALIZADO'
+    )
+    BEGIN
+        THROW 51006, 'No se pueden registrar o modificar resultados de un campeonato finalizado.', 1;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Partidos p ON i.IdPartido = p.IdPartido
+        WHERE i.IdEquipoGanador NOT IN (p.IdEquipoLocal, p.IdEquipoVisitante)
+    )
+    BEGIN
+        THROW 51007, 'El equipo ganador debe ser uno de los equipos del partido.', 1;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Partidos p ON i.IdPartido = p.IdPartido
+        WHERE (i.SetsLocal > i.SetsVisitante AND i.IdEquipoGanador <> p.IdEquipoLocal)
+           OR (i.SetsVisitante > i.SetsLocal AND i.IdEquipoGanador <> p.IdEquipoVisitante)
+    )
+    BEGIN
+        THROW 51008, 'El equipo ganador debe coincidir con el mayor numero de sets.', 1;
+    END;
+
+    UPDATE p
+    SET Estado = 'FINALIZADO'
+    FROM Partidos p
+    INNER JOIN inserted i ON p.IdPartido = i.IdPartido;
+END;
+GO
+
+CREATE TRIGGER TRG_Resultados_Auditoria_Update
+ON Resultados
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO AuditoriaResultados (
+        IdResultado,
+        IdPartido,
+        SetsLocalAnterior,
+        SetsVisitanteAnterior,
+        IdEquipoGanadorAnterior,
+        SetsLocalNuevo,
+        SetsVisitanteNuevo,
+        IdEquipoGanadorNuevo
+    )
+    SELECT
+        i.IdResultado,
+        i.IdPartido,
+        d.SetsLocal,
+        d.SetsVisitante,
+        d.IdEquipoGanador,
+        i.SetsLocal,
+        i.SetsVisitante,
+        i.IdEquipoGanador
+    FROM inserted i
+    INNER JOIN deleted d ON i.IdResultado = d.IdResultado
+    WHERE i.SetsLocal <> d.SetsLocal
+       OR i.SetsVisitante <> d.SetsVisitante
+       OR i.IdEquipoGanador <> d.IdEquipoGanador;
+END;
+GO
+
+/* ============================================================
+   Procedimientos almacenados
+   ============================================================ */
+
+CREATE PROCEDURE SP_CrearTablaPosicionesCategoria
+    @IdCategoria INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO TablaPosiciones (IdCampeonatoCategoria, IdEquipo)
+    SELECT e.IdCampeonatoCategoria, e.IdEquipo
+    FROM Equipos e
+    WHERE e.IdCampeonatoCategoria = @IdCategoria
+      AND e.Activo = 1
+      AND NOT EXISTS (
+          SELECT 1
+          FROM TablaPosiciones tp
+          WHERE tp.IdCampeonatoCategoria = e.IdCampeonatoCategoria
+            AND tp.IdEquipo = e.IdEquipo
+      );
+END;
+GO
+
+CREATE PROCEDURE SP_RecalcularTablaPosicionesCategoria
+    @IdCategoria INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    EXEC SP_CrearTablaPosicionesCategoria @IdCategoria;
+
+    UPDATE TablaPosiciones
+    SET
+        PartidosJugados = 0,
+        Ganados = 0,
+        Perdidos = 0,
+        SetsFavor = 0,
+        SetsContra = 0,
+        PuntosFavor = 0,
+        PuntosContra = 0,
+        Puntos = 0,
+        FechaActualizacion = SYSUTCDATETIME()
+    WHERE IdCampeonatoCategoria = @IdCategoria;
+
+    WITH ResultadoBase AS (
+        SELECT
+            p.IdCampeonatoCategoria,
+            p.IdEquipoLocal,
+            p.IdEquipoVisitante,
+            r.IdEquipoGanador,
+            r.SetsLocal,
+            r.SetsVisitante,
+            ISNULL(SUM(rs.PuntosLocal), 0) AS PuntosLocal,
+            ISNULL(SUM(rs.PuntosVisitante), 0) AS PuntosVisitante
+        FROM Resultados r
+        INNER JOIN Partidos p ON r.IdPartido = p.IdPartido
+        LEFT JOIN ResultadoSets rs ON r.IdResultado = rs.IdResultado
+        WHERE p.IdCampeonatoCategoria = @IdCategoria
+        GROUP BY
+            p.IdCampeonatoCategoria,
+            p.IdEquipoLocal,
+            p.IdEquipoVisitante,
+            r.IdEquipoGanador,
+            r.SetsLocal,
+            r.SetsVisitante
+    ),
+    EquipoResultado AS (
+        SELECT
+            IdCampeonatoCategoria,
+            IdEquipoLocal AS IdEquipo,
+            1 AS PartidosJugados,
+            CASE WHEN IdEquipoGanador = IdEquipoLocal THEN 1 ELSE 0 END AS Ganados,
+            CASE WHEN IdEquipoGanador = IdEquipoLocal THEN 0 ELSE 1 END AS Perdidos,
+            SetsLocal AS SetsFavor,
+            SetsVisitante AS SetsContra,
+            PuntosLocal AS PuntosFavor,
+            PuntosVisitante AS PuntosContra,
+            CASE WHEN IdEquipoGanador = IdEquipoLocal THEN 3 ELSE 0 END AS Puntos
+        FROM ResultadoBase
+        UNION ALL
+        SELECT
+            IdCampeonatoCategoria,
+            IdEquipoVisitante AS IdEquipo,
+            1,
+            CASE WHEN IdEquipoGanador = IdEquipoVisitante THEN 1 ELSE 0 END,
+            CASE WHEN IdEquipoGanador = IdEquipoVisitante THEN 0 ELSE 1 END,
+            SetsVisitante,
+            SetsLocal,
+            PuntosVisitante,
+            PuntosLocal,
+            CASE WHEN IdEquipoGanador = IdEquipoVisitante THEN 3 ELSE 0 END
+        FROM ResultadoBase
+    ),
+    Acumulado AS (
+        SELECT
+            IdCampeonatoCategoria,
+            IdEquipo,
+            SUM(PartidosJugados) AS PartidosJugados,
+            SUM(Ganados) AS Ganados,
+            SUM(Perdidos) AS Perdidos,
+            SUM(SetsFavor) AS SetsFavor,
+            SUM(SetsContra) AS SetsContra,
+            SUM(PuntosFavor) AS PuntosFavor,
+            SUM(PuntosContra) AS PuntosContra,
+            SUM(Puntos) AS Puntos
+        FROM EquipoResultado
+        GROUP BY IdCampeonatoCategoria, IdEquipo
+    )
+    UPDATE tp
+    SET
+        PartidosJugados = a.PartidosJugados,
+        Ganados = a.Ganados,
+        Perdidos = a.Perdidos,
+        SetsFavor = a.SetsFavor,
+        SetsContra = a.SetsContra,
+        PuntosFavor = a.PuntosFavor,
+        PuntosContra = a.PuntosContra,
+        Puntos = a.Puntos,
+        FechaActualizacion = SYSUTCDATETIME()
+    FROM TablaPosiciones tp
+    INNER JOIN Acumulado a
+        ON tp.IdCampeonatoCategoria = a.IdCampeonatoCategoria
+       AND tp.IdEquipo = a.IdEquipo;
+END;
+GO
+
+CREATE PROCEDURE SP_ReprogramarPartido
+    @IdPartido INT,
+    @FechaHoraNueva DATETIME2,
+    @Motivo NVARCHAR(300) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRANSACTION;
+
+    DECLARE @FechaHoraAnterior DATETIME2;
+
+    SELECT @FechaHoraAnterior = FechaHoraProgramada
+    FROM Partidos
+    WHERE IdPartido = @IdPartido;
+
+    IF @FechaHoraAnterior IS NULL AND NOT EXISTS (SELECT 1 FROM Partidos WHERE IdPartido = @IdPartido)
+    BEGIN
+        THROW 51009, 'Partido no encontrado.', 1;
+    END;
+
+    INSERT INTO ReprogramacionesPartido (IdPartido, FechaHoraAnterior, FechaHoraNueva, Motivo)
+    VALUES (@IdPartido, @FechaHoraAnterior, @FechaHoraNueva, @Motivo);
+
+    UPDATE Partidos
+    SET FechaHoraProgramada = @FechaHoraNueva,
+        Estado = 'REPROGRAMADO'
+    WHERE IdPartido = @IdPartido;
+
+    COMMIT TRANSACTION;
+END;
+GO
+
+CREATE PROCEDURE SP_RegistrarResultado
+    @IdPartido INT,
+    @SetsLocal INT,
+    @SetsVisitante INT,
+    @IdEquipoGanador INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRANSACTION;
+
+    INSERT INTO Resultados (IdPartido, SetsLocal, SetsVisitante, IdEquipoGanador)
+    VALUES (@IdPartido, @SetsLocal, @SetsVisitante, @IdEquipoGanador);
+
+    COMMIT TRANSACTION;
+END;
+GO
+
+CREATE TRIGGER TRG_Resultados_RecalcularPosiciones
+ON Resultados
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Categorias TABLE (IdCampeonatoCategoria INT PRIMARY KEY);
+
+    INSERT INTO @Categorias (IdCampeonatoCategoria)
+    SELECT DISTINCT p.IdCampeonatoCategoria
+    FROM inserted i
+    INNER JOIN Partidos p ON i.IdPartido = p.IdPartido
+    UNION
+    SELECT DISTINCT p.IdCampeonatoCategoria
+    FROM deleted d
+    INNER JOIN Partidos p ON d.IdPartido = p.IdPartido;
+
+    DECLARE @IdCampeonatoCategoria INT;
+    DECLARE categoria_cursor CURSOR LOCAL FAST_FORWARD FOR SELECT IdCampeonatoCategoria FROM @Categorias;
+
+    OPEN categoria_cursor;
+    FETCH NEXT FROM categoria_cursor INTO @IdCampeonatoCategoria;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC SP_RecalcularTablaPosicionesCategoria @IdCampeonatoCategoria;
+        FETCH NEXT FROM categoria_cursor INTO @IdCampeonatoCategoria;
+    END;
+
+    CLOSE categoria_cursor;
+    DEALLOCATE categoria_cursor;
+END;
+GO
+
+CREATE TRIGGER TRG_ResultadoSets_RecalcularPosiciones
+ON ResultadoSets
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Categorias TABLE (IdCampeonatoCategoria INT PRIMARY KEY);
+
+    INSERT INTO @Categorias (IdCampeonatoCategoria)
+    SELECT DISTINCT p.IdCampeonatoCategoria
+    FROM inserted i
+    INNER JOIN Resultados r ON i.IdResultado = r.IdResultado
+    INNER JOIN Partidos p ON r.IdPartido = p.IdPartido
+    UNION
+    SELECT DISTINCT p.IdCampeonatoCategoria
+    FROM deleted d
+    INNER JOIN Resultados r ON d.IdResultado = r.IdResultado
+    INNER JOIN Partidos p ON r.IdPartido = p.IdPartido;
+
+    DECLARE @IdCampeonatoCategoria INT;
+    DECLARE categoria_cursor CURSOR LOCAL FAST_FORWARD FOR SELECT IdCampeonatoCategoria FROM @Categorias;
+
+    OPEN categoria_cursor;
+    FETCH NEXT FROM categoria_cursor INTO @IdCampeonatoCategoria;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC SP_RecalcularTablaPosicionesCategoria @IdCampeonatoCategoria;
+        FETCH NEXT FROM categoria_cursor INTO @IdCampeonatoCategoria;
+    END;
+
+    CLOSE categoria_cursor;
+    DEALLOCATE categoria_cursor;
+END;
+GO
+
+/* ============================================================
+   Vistas
+   ============================================================ */
+
+CREATE VIEW VW_TablaPosicionesOrdenada
+AS
+SELECT
+    tp.IdCampeonatoCategoria,
+    cam.IdCampeonato,
+    cam.Nombre AS Campeonato,
+    c.IdCategoria,
+    c.Nombre AS Categoria,
+    tp.IdEquipo,
+    e.Nombre AS Equipo,
+    tp.PartidosJugados,
+    tp.Ganados,
+    tp.Perdidos,
+    tp.SetsFavor,
+    tp.SetsContra,
+    tp.SetsFavor - tp.SetsContra AS DiferenciaSets,
+    tp.PuntosFavor,
+    tp.PuntosContra,
+    tp.PuntosFavor - tp.PuntosContra AS DiferenciaPuntos,
+    tp.Puntos
+FROM TablaPosiciones tp
+INNER JOIN CampeonatosCategorias cc ON tp.IdCampeonatoCategoria = cc.IdCampeonatoCategoria
+INNER JOIN Campeonatos cam ON cc.IdCampeonato = cam.IdCampeonato
+INNER JOIN Categorias c ON cc.IdCategoria = c.IdCategoria
+INNER JOIN Equipos e ON tp.IdEquipo = e.IdEquipo;
+GO
+
+CREATE VIEW VW_FixtureCompleto
+AS
+SELECT
+    p.IdPartido,
+    cc.IdCampeonatoCategoria,
+    cam.IdCampeonato,
+    cam.Nombre AS Campeonato,
+    c.IdCategoria,
+    c.Nombre AS Categoria,
+    f.IdFase,
+    f.Nombre AS Fase,
+    f.Tipo AS TipoFase,
+    j.IdJornada,
+    j.NumeroJornada,
+    p.FechaHoraProgramada,
+    local.IdEquipo AS IdEquipoLocal,
+    local.Nombre AS EquipoLocal,
+    visitante.IdEquipo AS IdEquipoVisitante,
+    visitante.Nombre AS EquipoVisitante,
+    p.Estado
+FROM Partidos p
+INNER JOIN CampeonatosCategorias cc ON p.IdCampeonatoCategoria = cc.IdCampeonatoCategoria
+INNER JOIN Campeonatos cam ON cc.IdCampeonato = cam.IdCampeonato
+INNER JOIN Categorias c ON cc.IdCategoria = c.IdCategoria
+INNER JOIN Fases f ON p.IdFase = f.IdFase
+INNER JOIN Jornadas j ON p.IdJornada = j.IdJornada
+INNER JOIN Equipos local ON p.IdEquipoLocal = local.IdEquipo
+INNER JOIN Equipos visitante ON p.IdEquipoVisitante = visitante.IdEquipo;
+GO
+
+CREATE VIEW VW_ResultadosCompletos
+AS
+SELECT
+    r.IdResultado,
+    p.IdPartido,
+    cc.IdCampeonatoCategoria,
+    cam.IdCampeonato,
+    cam.Nombre AS Campeonato,
+    c.IdCategoria,
+    c.Nombre AS Categoria,
+    f.Nombre AS Fase,
+    j.NumeroJornada,
+    p.FechaHoraProgramada,
+    local.Nombre AS EquipoLocal,
+    visitante.Nombre AS EquipoVisitante,
+    r.SetsLocal,
+    r.SetsVisitante,
+    ganador.Nombre AS EquipoGanador,
+    r.FechaRegistro
+FROM Resultados r
+INNER JOIN Partidos p ON r.IdPartido = p.IdPartido
+INNER JOIN CampeonatosCategorias cc ON p.IdCampeonatoCategoria = cc.IdCampeonatoCategoria
+INNER JOIN Campeonatos cam ON cc.IdCampeonato = cam.IdCampeonato
+INNER JOIN Categorias c ON cc.IdCategoria = c.IdCategoria
+INNER JOIN Fases f ON p.IdFase = f.IdFase
+INNER JOIN Jornadas j ON p.IdJornada = j.IdJornada
+INNER JOIN Equipos local ON p.IdEquipoLocal = local.IdEquipo
+INNER JOIN Equipos visitante ON p.IdEquipoVisitante = visitante.IdEquipo
+INNER JOIN Equipos ganador ON r.IdEquipoGanador = ganador.IdEquipo;
+GO
