@@ -12,4 +12,3 @@ public sealed record AuditoriaResultadoResponse(
     int IdEquipoGanadorNuevo,
     string? Motivo,
     DateTime FechaCambio);
-

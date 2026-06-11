@@ -2,9 +2,12 @@ namespace WallyBallBackend.Application.Jugadores;
 
 public sealed record JugadorResponse(
     int IdJugador,
+    int IdPersona,
+    int? IdUsuario,
     string Cedula,
     string Nombre,
     string Apellido,
+    string? Email,
     string? Telefono,
     DateOnly? FechaNacimiento,
     bool Activo,

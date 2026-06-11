@@ -2,11 +2,11 @@
 
 `wally-service` es el microservicio de dominio deportivo del sistema WallyBall para administrar campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones, portal de consulta y reportes.
 
-La identidad, autenticacion, refresh tokens, usuarios y roles pertenecen a `identidad-service`.
+Personas, autenticacion, refresh tokens, usuarios y roles pertenecen a `personas-service`.
 
 ## Objetivo
 
-Construir una API de dominio para administrar campeonatos de wallyball del Deportivo Agape. El servicio valida JWT emitidos por `identidad-service`, pero no administra credenciales ni sesiones.
+Construir una API de dominio para administrar campeonatos de wallyball del Deportivo Agape. El servicio valida JWT emitidos por `personas-service`, pero no administra credenciales ni sesiones.
 
 ## Roles Consumidos
 
@@ -38,7 +38,7 @@ Construir una API de dominio para administrar campeonatos de wallyball del Depor
 - Cambio de contrasena.
 - Administracion de roles y credenciales.
 
-Estas responsabilidades viven en `identidad-service`.
+Estas responsabilidades viven en `personas-service`.
 
 ## Epicas e Historias de Usuario
 

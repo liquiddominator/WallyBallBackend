@@ -6,4 +6,3 @@ public interface IDatosPruebaService
         GenerarDatosPruebaRequest request,
         CancellationToken cancellationToken);
 }
-

@@ -18,6 +18,16 @@ public sealed class CreateJugadorRequestValidator : AbstractValidator<CreateJuga
             .NotEmpty()
             .MaximumLength(100);
 
+        RuleFor(request => request.Email)
+            .NotEmpty()
+            .EmailAddress()
+            .MaximumLength(150);
+
+        RuleFor(request => request.PasswordTemporal)
+            .NotEmpty()
+            .MinimumLength(8)
+            .MaximumLength(100);
+
         RuleFor(request => request.Telefono)
             .MaximumLength(30);
 

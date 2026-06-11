@@ -11,13 +11,14 @@ services:
       Cassandra__ContactPoints__0: cassandra
       Cassandra__Port: 9042
       Cassandra__Keyspace: wallyball
-      Jwt__Issuer: IdentidadService
+      Jwt__Issuer: PersonasService
       Jwt__Audience: WallyBallClients
       Jwt__SigningKey: development-signing-key-change-before-production-32
       Jwt__ExpirationMinutes: 120
       Jwt__RefreshTokenExpirationDays: 7
       Jwt__MaxFailedLoginAttempts: 5
       Jwt__LockoutMinutes: 15
+      PersonasService__BaseUrl: http://host.docker.internal:5097
     ports:
       - "5167:8080"
     depends_on:

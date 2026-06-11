@@ -38,4 +38,3 @@ public sealed class RegisterResultadoRequestValidator : AbstractValidator<Regist
         return localSets != visitanteSets;
     }
 }
-

@@ -32,4 +32,3 @@ public sealed class PosicionesController : ControllerBase
         return posiciones is null ? NotFound() : Ok(posiciones);
     }
 }
-

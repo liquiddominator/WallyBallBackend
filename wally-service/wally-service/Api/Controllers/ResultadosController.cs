@@ -168,4 +168,3 @@ public sealed class ResultadosController : ControllerBase
         };
     }
 }
-

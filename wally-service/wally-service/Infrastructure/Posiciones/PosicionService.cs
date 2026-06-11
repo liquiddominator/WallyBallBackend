@@ -66,4 +66,3 @@ public sealed class PosicionService : IPosicionService
             .ToList();
     }
 }
-

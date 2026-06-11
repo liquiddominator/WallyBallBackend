@@ -6,7 +6,7 @@ Este documento concentra los endpoints HTTP de `wally-service`. El contexto func
 
 - Base local: `http://localhost:5167`.
 - Version actual: `v1`.
-- Todas las rutas operativas requieren JWT emitido por `identidad-service`.
+- Todas las rutas operativas requieren JWT emitido por `personas-service`.
 - Los endpoints implementados actualmente requieren rol `ORGANIZADOR`.
 - En Swagger se debe pegar solo el JWT, sin el prefijo `Bearer`.
 
@@ -240,10 +240,18 @@ Body:
   "cedula": "1234567",
   "nombre": "Carlos",
   "apellido": "Perez",
+  "email": "carlos.perez@example.com",
+  "passwordTemporal": "Temporal123!",
   "telefono": "70000000",
   "fechaNacimiento": "2001-05-10"
 }
 ```
+
+Notas:
+
+- `wally-service` solicita a `personas-service` crear la persona y el usuario con rol `JUGADOR`.
+- El jugador queda vinculado mediante `idPersona`.
+- El organizador realiza un solo registro desde este endpoint.
 
 Respuestas relevantes: `201`, `400`, `409`.
 
@@ -526,7 +534,8 @@ Notas:
 - Crea un campeonato activo.
 - Crea categorias reutilizables asociadas al campeonato.
 - Crea equipos por categoria de campeonato.
-- Crea jugadores con nombres, apellidos, cedulas, telefonos y fechas de nacimiento realistas.
+- Crea jugadores deportivos con referencias `idPersona` sinteticas para pruebas de dominio.
+- Los datos personales reales se crean desde `personas-service` mediante el flujo de alta de jugador.
 - Inscribe jugadores en equipos respetando el maximo de 12 jugadores por equipo.
 - Opcionalmente genera fixture round-robin.
 - Opcionalmente registra resultados para poblar la tabla de posiciones.

@@ -12,8 +12,8 @@ using WallyBallBackend.Infrastructure.Persistence.SqlServer;
 namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260609212119_AddSqlServerProgrammability")]
-    partial class AddSqlServerProgrammability
+    [Migration("20260611193919_MoveJugadorPersonalDataToPersonasService")]
+    partial class MoveJugadorPersonalDataToPersonasService
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -117,6 +117,53 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WallyBallBackend.Domain.Entities.CampeonatoCategoria", b =>
+                {
+                    b.Property<int>("IdCampeonatoCategoria")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdCampeonatoCategoria"));
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasDefaultValue("ACTIVA");
+
+                    b.Property<DateTime?>("FechaActualizacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("IdCampeonato")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdCategoria")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdCampeonatoCategoria");
+
+                    b.HasIndex("IdCategoria");
+
+                    b.HasIndex("IdCampeonato", "IdCategoria")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_CampeonatosCategorias_Campeonato_Categoria");
+
+                    b.ToTable("CampeonatosCategorias", null, t =>
+                        {
+                            t.HasTrigger("TRG_CampeonatosCategorias_BloquearCampeonatoFinalizado");
+
+                            t.HasCheckConstraint("CK_CampeonatosCategorias_Estado", "Estado IN ('ACTIVA', 'INACTIVA')");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Categoria", b =>
                 {
                     b.Property<int>("IdCategoria")
@@ -140,9 +187,6 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                    b.Property<int>("IdCampeonato")
-                        .HasColumnType("int");
-
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -150,9 +194,9 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.HasKey("IdCategoria");
 
-                    b.HasIndex("IdCampeonato", "Nombre")
+                    b.HasIndex("Nombre")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Categorias_Campeonato_Nombre");
+                        .HasDatabaseName("UQ_Categorias_Nombre");
 
                     b.ToTable("Categorias", null, t =>
                         {
@@ -181,7 +225,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                    b.Property<int>("IdCategoria")
+                    b.Property<int>("IdCampeonatoCategoria")
                         .HasColumnType("int");
 
                     b.Property<string>("Nombre")
@@ -191,11 +235,16 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.HasKey("IdEquipo");
 
-                    b.HasIndex("IdCategoria", "Nombre")
+                    b.HasIndex("IdCampeonatoCategoria", "Nombre")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Equipos_Categoria_Nombre");
+                        .HasDatabaseName("UQ_Equipos_CampeonatoCategoria_Nombre");
 
-                    b.ToTable("Equipos", (string)null);
+                    b.ToTable("Equipos", null, t =>
+                        {
+                            t.HasTrigger("TRG_Equipos_BloquearCampeonatoFinalizado");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Fase", b =>
@@ -213,7 +262,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("nvarchar(30)")
                         .HasDefaultValue("PENDIENTE");
 
-                    b.Property<int>("IdCategoria")
+                    b.Property<int>("IdCampeonatoCategoria")
                         .HasColumnType("int");
 
                     b.Property<string>("Nombre")
@@ -231,9 +280,9 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.HasKey("IdFase");
 
-                    b.HasIndex("IdCategoria", "Orden")
+                    b.HasIndex("IdCampeonatoCategoria", "Orden")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Fases_Categoria_Orden");
+                        .HasDatabaseName("UQ_Fases_CampeonatoCategoria_Orden");
 
                     b.ToTable("Fases", null, t =>
                         {
@@ -279,8 +328,12 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.ToTable("InscripcionesEquipoJugador", null, t =>
                         {
+                            t.HasTrigger("TRG_Maximo12JugadoresPorEquipo");
+
                             t.HasCheckConstraint("CK_Inscripciones_Estado", "Estado IN ('ACTIVO', 'RETIRADO')");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Jornada", b =>
@@ -334,16 +387,6 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Cedula")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<DateTime?>("FechaActualizacion")
                         .HasColumnType("datetime2");
 
@@ -352,31 +395,15 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                    b.Property<DateOnly?>("FechaNacimiento")
-                        .HasColumnType("date");
-
-                    b.Property<int?>("IdUsuario")
+                    b.Property<int?>("IdPersona")
                         .HasColumnType("int");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Telefono")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("IdJugador");
 
-                    b.HasIndex("Cedula")
+                    b.HasIndex("IdPersona")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Jugadores_Cedula");
-
-                    b.HasIndex("IdUsuario")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_Jugadores_IdUsuario")
-                        .HasFilter("[IdUsuario] IS NOT NULL");
+                        .HasDatabaseName("UQ_Jugadores_IdPersona")
+                        .HasFilter("[IdPersona] IS NOT NULL");
 
                     b.ToTable("Jugadores", (string)null);
                 });
@@ -409,7 +436,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                     b.Property<DateTime?>("FechaHoraProgramada")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdCategoria")
+                    b.Property<int>("IdCampeonatoCategoria")
                         .HasColumnType("int");
 
                     b.Property<int>("IdEquipoLocal")
@@ -426,7 +453,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.HasKey("IdPartido");
 
-                    b.HasIndex("IdCategoria");
+                    b.HasIndex("IdCampeonatoCategoria");
 
                     b.HasIndex("IdEquipoLocal");
 
@@ -442,10 +469,14 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.ToTable("Partidos", null, t =>
                         {
+                            t.HasTrigger("TRG_Partidos_ValidarIntegridad");
+
                             t.HasCheckConstraint("CK_Partidos_EquiposDiferentes", "IdEquipoLocal <> IdEquipoVisitante");
 
                             t.HasCheckConstraint("CK_Partidos_Estado", "Estado IN ('PROGRAMADO', 'REPROGRAMADO', 'FINALIZADO', 'CANCELADO')");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.ReprogramacionPartido", b =>
@@ -519,10 +550,18 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.ToTable("Resultados", null, t =>
                         {
+                            t.HasTrigger("TRG_Resultados_Auditoria_Update");
+
+                            t.HasTrigger("TRG_Resultados_BloquearCampeonatoFinalizado");
+
+                            t.HasTrigger("TRG_Resultados_RecalcularPosiciones");
+
                             t.HasCheckConstraint("CK_Resultados_NoEmpate", "SetsLocal <> SetsVisitante");
 
                             t.HasCheckConstraint("CK_Resultados_Sets", "SetsLocal >= 0 AND SetsVisitante >= 0");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.ResultadoSet", b =>
@@ -553,59 +592,16 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.ToTable("ResultadoSets", null, t =>
                         {
+                            t.HasTrigger("TRG_ResultadoSets_RecalcularPosiciones");
+
                             t.HasCheckConstraint("CK_ResultadoSets_NoEmpate", "PuntosLocal <> PuntosVisitante");
 
                             t.HasCheckConstraint("CK_ResultadoSets_NumeroSet", "NumeroSet > 0");
 
                             t.HasCheckConstraint("CK_ResultadoSets_Puntos", "PuntosLocal >= 0 AND PuntosVisitante >= 0");
                         });
-                });
 
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Rol", b =>
-                {
-                    b.Property<int>("IdRol")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdRol"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Descripcion")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("IdRol");
-
-                    b.HasIndex("Nombre")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_Roles_Nombre");
-
-                    b.ToTable("Roles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            IdRol = 1,
-                            Activo = true,
-                            Descripcion = "Usuario encargado de administrar campeonatos, categorias, equipos, jugadores, fixture, resultados y posiciones.",
-                            Nombre = "ORGANIZADOR"
-                        },
-                        new
-                        {
-                            IdRol = 2,
-                            Activo = true,
-                            Descripcion = "Usuario que puede consultar fixture, resultados, posiciones e informacion de su equipo.",
-                            Nombre = "JUGADOR"
-                        });
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.TablaPosicion", b =>
@@ -626,7 +622,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("IdCategoria")
+                    b.Property<int>("IdCampeonatoCategoria")
                         .HasColumnType("int");
 
                     b.Property<int>("IdEquipo")
@@ -671,88 +667,14 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.HasIndex("IdEquipo");
 
-                    b.HasIndex("IdCategoria", "IdEquipo")
+                    b.HasIndex("IdCampeonatoCategoria", "IdEquipo")
                         .IsUnique()
-                        .HasDatabaseName("UQ_TablaPosiciones_Categoria_Equipo");
+                        .HasDatabaseName("UQ_TablaPosiciones_CampeonatoCategoria_Equipo");
 
                     b.ToTable("TablaPosiciones", null, t =>
                         {
                             t.HasCheckConstraint("CK_TablaPosiciones_Valores", "PartidosJugados >= 0 AND Ganados >= 0 AND Perdidos >= 0 AND SetsFavor >= 0 AND SetsContra >= 0 AND PuntosFavor >= 0 AND PuntosContra >= 0 AND Puntos >= 0");
                         });
-                });
-
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Usuario", b =>
-                {
-                    b.Property<int>("IdUsuario")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdUsuario"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime?>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<string>("NombreCompleto")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("IdUsuario");
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_Usuarios_Email");
-
-                    b.ToTable("Usuarios", (string)null);
-                });
-
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.UsuarioRol", b =>
-                {
-                    b.Property<int>("IdUsuarioRol")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdUsuarioRol"));
-
-                    b.Property<DateTime>("FechaAsignacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<int>("IdRol")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IdUsuario")
-                        .HasColumnType("int");
-
-                    b.HasKey("IdUsuarioRol");
-
-                    b.HasIndex("IdRol");
-
-                    b.HasIndex("IdUsuario", "IdRol")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_UsuarioRol_Usuario_Rol");
-
-                    b.ToTable("UsuarioRol", (string)null);
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.AuditoriaResultado", b =>
@@ -766,37 +688,45 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                     b.Navigation("Resultado");
                 });
 
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Categoria", b =>
+            modelBuilder.Entity("WallyBallBackend.Domain.Entities.CampeonatoCategoria", b =>
                 {
                     b.HasOne("WallyBallBackend.Domain.Entities.Campeonato", "Campeonato")
-                        .WithMany("Categorias")
+                        .WithMany("CampeonatoCategorias")
                         .HasForeignKey("IdCampeonato")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("WallyBallBackend.Domain.Entities.Categoria", "Categoria")
+                        .WithMany("CampeonatoCategorias")
+                        .HasForeignKey("IdCategoria")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Campeonato");
+
+                    b.Navigation("Categoria");
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Equipo", b =>
                 {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Categoria", "Categoria")
+                    b.HasOne("WallyBallBackend.Domain.Entities.CampeonatoCategoria", "CampeonatoCategoria")
                         .WithMany("Equipos")
-                        .HasForeignKey("IdCategoria")
+                        .HasForeignKey("IdCampeonatoCategoria")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Categoria");
+                    b.Navigation("CampeonatoCategoria");
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Fase", b =>
                 {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Categoria", "Categoria")
+                    b.HasOne("WallyBallBackend.Domain.Entities.CampeonatoCategoria", "CampeonatoCategoria")
                         .WithMany("Fases")
-                        .HasForeignKey("IdCategoria")
+                        .HasForeignKey("IdCampeonatoCategoria")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Categoria");
+                    b.Navigation("CampeonatoCategoria");
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.InscripcionEquipoJugador", b =>
@@ -829,20 +759,11 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                     b.Navigation("Fase");
                 });
 
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Jugador", b =>
-                {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Usuario", "Usuario")
-                        .WithOne("Jugador")
-                        .HasForeignKey("WallyBallBackend.Domain.Entities.Jugador", "IdUsuario");
-
-                    b.Navigation("Usuario");
-                });
-
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Partido", b =>
                 {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Categoria", "Categoria")
+                    b.HasOne("WallyBallBackend.Domain.Entities.CampeonatoCategoria", "CampeonatoCategoria")
                         .WithMany("Partidos")
-                        .HasForeignKey("IdCategoria")
+                        .HasForeignKey("IdCampeonatoCategoria")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -870,7 +791,7 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Categoria");
+                    b.Navigation("CampeonatoCategoria");
 
                     b.Navigation("EquipoLocal");
 
@@ -924,9 +845,9 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.TablaPosicion", b =>
                 {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Categoria", "Categoria")
+                    b.HasOne("WallyBallBackend.Domain.Entities.CampeonatoCategoria", "CampeonatoCategoria")
                         .WithMany("TablaPosiciones")
-                        .HasForeignKey("IdCategoria")
+                        .HasForeignKey("IdCampeonatoCategoria")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -936,36 +857,17 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Categoria");
+                    b.Navigation("CampeonatoCategoria");
 
                     b.Navigation("Equipo");
                 });
 
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.UsuarioRol", b =>
-                {
-                    b.HasOne("WallyBallBackend.Domain.Entities.Rol", "Rol")
-                        .WithMany("UsuarioRoles")
-                        .HasForeignKey("IdRol")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("WallyBallBackend.Domain.Entities.Usuario", "Usuario")
-                        .WithMany("UsuarioRoles")
-                        .HasForeignKey("IdUsuario")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Rol");
-
-                    b.Navigation("Usuario");
-                });
-
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Campeonato", b =>
                 {
-                    b.Navigation("Categorias");
+                    b.Navigation("CampeonatoCategorias");
                 });
 
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Categoria", b =>
+            modelBuilder.Entity("WallyBallBackend.Domain.Entities.CampeonatoCategoria", b =>
                 {
                     b.Navigation("Equipos");
 
@@ -974,6 +876,11 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                     b.Navigation("Partidos");
 
                     b.Navigation("TablaPosiciones");
+                });
+
+            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Categoria", b =>
+                {
+                    b.Navigation("CampeonatoCategorias");
                 });
 
             modelBuilder.Entity("WallyBallBackend.Domain.Entities.Equipo", b =>
@@ -1018,18 +925,6 @@ namespace WallyBallBackend.Infrastructure.Persistence.SqlServer.Migrations
                     b.Navigation("Auditorias");
 
                     b.Navigation("Sets");
-                });
-
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Rol", b =>
-                {
-                    b.Navigation("UsuarioRoles");
-                });
-
-            modelBuilder.Entity("WallyBallBackend.Domain.Entities.Usuario", b =>
-                {
-                    b.Navigation("Jugador");
-
-                    b.Navigation("UsuarioRoles");
                 });
 #pragma warning restore 612, 618
         }

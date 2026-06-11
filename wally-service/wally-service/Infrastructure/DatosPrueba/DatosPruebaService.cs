@@ -25,10 +25,11 @@ public sealed class DatosPruebaService : IDatosPruebaService
         var randomizer = new Randomizer(seed);
         var faker = new Faker("es");
         var suffix = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
-        var usedCedulas = await _dbContext.Jugadores
+        var nextPersonaId = await _dbContext.Jugadores
             .AsNoTracking()
-            .Select(jugador => jugador.Cedula)
-            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+            .Select(jugador => (int?)jugador.IdPersona)
+            .MaxAsync(cancellationToken) ?? 0;
+        nextPersonaId++;
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -62,7 +63,8 @@ public sealed class DatosPruebaService : IDatosPruebaService
                 _dbContext.Equipos.AddRange(equipos);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                var jugadores = CreateJugadores(request.JugadoresPorEquipo * equipos.Count, faker, randomizer, usedCedulas);
+                var jugadores = CreateJugadores(request.JugadoresPorEquipo * equipos.Count, nextPersonaId);
+                nextPersonaId += jugadores.Count;
                 _dbContext.Jugadores.AddRange(jugadores);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -185,30 +187,15 @@ public sealed class DatosPruebaService : IDatosPruebaService
         return equipos;
     }
 
-    private static List<Jugador> CreateJugadores(
-        int count,
-        Faker faker,
-        Randomizer randomizer,
-        ISet<string> usedCedulas)
+    private static List<Jugador> CreateJugadores(int count, int firstPersonaId)
     {
         var jugadores = new List<Jugador>();
 
         while (jugadores.Count < count)
         {
-            var cedula = randomizer.Replace("########");
-
-            if (!usedCedulas.Add(cedula))
-            {
-                continue;
-            }
-
             jugadores.Add(new Jugador
             {
-                Cedula = cedula,
-                Nombre = faker.Name.FirstName(),
-                Apellido = faker.Name.LastName(),
-                Telefono = $"7{randomizer.Replace("#######")}",
-                FechaNacimiento = DateOnly.FromDateTime(faker.Date.Past(20, DateTime.UtcNow.AddYears(-16))),
+                IdPersona = firstPersonaId + jugadores.Count,
                 Activo = true
             });
         }

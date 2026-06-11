@@ -17,4 +17,3 @@ public sealed record PosicionResponse(
     int DiferenciaPuntos,
     int Puntos,
     DateTime FechaActualizacion);
-

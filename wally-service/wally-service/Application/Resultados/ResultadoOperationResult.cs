@@ -28,4 +28,3 @@ public sealed class ResultadoOperationResult
         return new ResultadoOperationResult(false, null, errorCode, errorMessage);
     }
 }
-

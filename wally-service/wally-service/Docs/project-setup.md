@@ -4,14 +4,14 @@
 
 `wally-service` es una API ASP.NET Core para gestionar el dominio deportivo de campeonatos de wallyball del Deportivo Agape. Contempla administracion de campeonatos, categorias, equipos, jugadores, fixture, resultados, tabla de posiciones, portal de consulta para jugadores y reportes.
 
-La autenticacion, usuarios, roles y refresh tokens pertenecen a `identidad-service`.
+La autenticacion, usuarios, roles y refresh tokens pertenecen a `personas-service`.
 
 ## Requisitos
 
 - .NET SDK 10 o compatible con `net10.0`.
 - SQL Server local o en Docker.
 - Apache Cassandra local o en Docker.
-- Un JWT valido emitido por `identidad-service` para probar endpoints protegidos.
+- Un JWT valido emitido por `personas-service` para probar endpoints protegidos.
 - Un cliente HTTP como navegador, Postman, Insomnia o REST Client.
 
 ## Estructura Principal
@@ -45,7 +45,7 @@ Revisar `wally-service/appsettings.Development.json` y ajustar:
 - `Cassandra:ContactPoints`
 - `Cassandra:Keyspace`
 
-La configuracion JWT debe coincidir con la configuracion usada por `identidad-service` para emitir tokens.
+La configuracion JWT debe coincidir con la configuracion usada por `personas-service` para emitir tokens.
 
 ## Ejecucion Local
 
@@ -96,7 +96,7 @@ En entorno `Development` o `Docker`, Swagger UI queda disponible en:
 http://localhost:5167/swagger
 ```
 
-Swagger UI incluye autorizacion Bearer JWT. Para probar endpoints protegidos, obtener primero un token desde `identidad-service`, presionar `Authorize` y pegar solo el token.
+Swagger UI incluye autorizacion Bearer JWT. Para probar endpoints protegidos, obtener primero un token desde `personas-service`, presionar `Authorize` y pegar solo el token.
 
 ## Endpoints Implementados
 

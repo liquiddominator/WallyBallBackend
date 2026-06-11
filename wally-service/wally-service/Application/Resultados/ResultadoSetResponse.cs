@@ -7,4 +7,3 @@ public sealed record ResultadoSetResponse(
     int PuntosVisitante,
     int IdEquipoGanadorSet,
     string EquipoGanadorSet);
-

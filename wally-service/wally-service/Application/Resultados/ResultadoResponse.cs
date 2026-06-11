@@ -19,4 +19,3 @@ public sealed record ResultadoResponse(
     DateTime FechaRegistro,
     DateTime? FechaActualizacion,
     IReadOnlyCollection<ResultadoSetResponse> Sets);
-

@@ -21,6 +21,7 @@ using WallyBallBackend.Infrastructure.Fixture;
 using WallyBallBackend.Infrastructure.Jugadores;
 using WallyBallBackend.Infrastructure.Persistence.Cassandra;
 using WallyBallBackend.Infrastructure.Persistence.SqlServer;
+using WallyBallBackend.Infrastructure.Personas;
 using WallyBallBackend.Infrastructure.Posiciones;
 using WallyBallBackend.Infrastructure.Resultados;
 
@@ -32,6 +33,15 @@ public static class DependencyInjection
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<CassandraOptions>(configuration.GetSection(CassandraOptions.SectionName));
+        services.Configure<PersonasServiceOptions>(configuration.GetSection(PersonasServiceOptions.SectionName));
+
+        services.AddHttpContextAccessor();
+        services.AddHttpClient<IPersonasServiceClient, PersonasServiceClient>(client =>
+        {
+            var options = configuration.GetSection(PersonasServiceOptions.SectionName).Get<PersonasServiceOptions>() ?? new PersonasServiceOptions();
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         services.AddDbContext<AppDbContext>(options =>
         {

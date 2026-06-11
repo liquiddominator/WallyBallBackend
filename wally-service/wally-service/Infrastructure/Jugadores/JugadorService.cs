@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WallyBallBackend.Application.Jugadores;
 using WallyBallBackend.Domain.Entities;
 using WallyBallBackend.Infrastructure.Persistence.SqlServer;
+using WallyBallBackend.Infrastructure.Personas;
 
 namespace WallyBallBackend.Infrastructure.Jugadores;
 
@@ -12,10 +13,12 @@ public sealed class JugadorService : IJugadorService
     private const int MaxJugadoresActivosPorEquipo = 12;
 
     private readonly AppDbContext _dbContext;
+    private readonly IPersonasServiceClient _personasServiceClient;
 
-    public JugadorService(AppDbContext dbContext)
+    public JugadorService(AppDbContext dbContext, IPersonasServiceClient personasServiceClient)
     {
         _dbContext = dbContext;
+        _personasServiceClient = personasServiceClient;
     }
 
     public async Task<IReadOnlyCollection<JugadorResponse>> GetJugadoresAsync(
@@ -24,23 +27,27 @@ public sealed class JugadorService : IJugadorService
         int? equipoId,
         CancellationToken cancellationToken)
     {
-        var query = _dbContext.Jugadores
-            .AsNoTracking()
-            .AsQueryable();
+        HashSet<int>? filteredPersonaIds = null;
 
-        var normalizedTerm = NormalizeOptionalText(termino);
-        if (normalizedTerm is not null)
+        if (!string.IsNullOrWhiteSpace(termino) || !string.IsNullOrWhiteSpace(cedula))
         {
-            query = query.Where(jugador =>
-                jugador.Nombre.Contains(normalizedTerm)
-                || jugador.Apellido.Contains(normalizedTerm)
-                || (jugador.Nombre + " " + jugador.Apellido).Contains(normalizedTerm));
+            var personasResult = await _personasServiceClient.GetPersonasAsync([], termino, cedula, cancellationToken);
+
+            if (!personasResult.Succeeded)
+            {
+                return [];
+            }
+
+            filteredPersonaIds = personasResult.Value!
+                .Select(persona => persona.IdPersona)
+                .ToHashSet();
         }
 
-        var normalizedCedula = NormalizeOptionalText(cedula);
-        if (normalizedCedula is not null)
+        var query = CreateJugadorQuery().AsNoTracking();
+
+        if (filteredPersonaIds is not null)
         {
-            query = query.Where(jugador => jugador.Cedula.Contains(normalizedCedula));
+            query = query.Where(jugador => jugador.IdPersona.HasValue && filteredPersonaIds.Contains(jugador.IdPersona.Value));
         }
 
         if (equipoId.HasValue)
@@ -52,91 +59,82 @@ public sealed class JugadorService : IJugadorService
         }
 
         var jugadores = await query
-            .Include(jugador => jugador.Inscripciones)
-            .ThenInclude(inscripcion => inscripcion.Equipo)
-            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
-            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Campeonato)
-            .Include(jugador => jugador.Inscripciones)
-            .ThenInclude(inscripcion => inscripcion.Equipo)
-            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
-            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Categoria)
-            .OrderBy(jugador => jugador.Apellido)
-            .ThenBy(jugador => jugador.Nombre)
-            .ThenBy(jugador => jugador.IdJugador)
+            .OrderBy(jugador => jugador.IdJugador)
             .ToListAsync(cancellationToken);
 
-        return jugadores.Select(CreateJugadorResponse).ToList();
+        return await CreateJugadorResponsesAsync(jugadores, cancellationToken);
     }
 
     public async Task<JugadorResponse?> GetJugadorByIdAsync(int jugadorId, CancellationToken cancellationToken)
     {
-        var jugador = await _dbContext.Jugadores
+        var jugador = await CreateJugadorQuery()
             .AsNoTracking()
-            .Include(jugador => jugador.Inscripciones)
-            .ThenInclude(inscripcion => inscripcion.Equipo)
-            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
-            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Campeonato)
-            .Include(jugador => jugador.Inscripciones)
-            .ThenInclude(inscripcion => inscripcion.Equipo)
-            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
-            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Categoria)
             .SingleOrDefaultAsync(jugador => jugador.IdJugador == jugadorId, cancellationToken);
 
-        return jugador is null ? null : CreateJugadorResponse(jugador);
+        if (jugador is null)
+        {
+            return null;
+        }
+
+        var responses = await CreateJugadorResponsesAsync([jugador], cancellationToken);
+
+        return responses.SingleOrDefault();
     }
 
     public async Task<IReadOnlyCollection<JugadorEquipoResponse>> GetJugadoresByEquipoAsync(
         int equipoId,
         CancellationToken cancellationToken)
     {
-        return await _dbContext.InscripcionesEquipoJugador
+        var inscripciones = await _dbContext.InscripcionesEquipoJugador
             .AsNoTracking()
+            .Include(inscripcion => inscripcion.Equipo)
+            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
+            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Campeonato)
+            .Include(inscripcion => inscripcion.Equipo)
+            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
+            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Categoria)
+            .Include(inscripcion => inscripcion.Jugador)
             .Where(inscripcion => inscripcion.IdEquipo == equipoId && inscripcion.Estado == EstadoInscripcionActiva)
-            .OrderBy(inscripcion => inscripcion.Jugador!.Apellido)
-            .ThenBy(inscripcion => inscripcion.Jugador!.Nombre)
-            .ThenBy(inscripcion => inscripcion.IdInscripcion)
-            .Select(inscripcion => new JugadorEquipoResponse(
-                inscripcion.IdInscripcion,
-                inscripcion.IdJugador,
-                inscripcion.IdEquipo,
-                inscripcion.Equipo!.Nombre,
-                inscripcion.Equipo.CampeonatoCategoria!.IdCampeonatoCategoria,
-                inscripcion.Equipo.CampeonatoCategoria.Categoria!.Nombre,
-                inscripcion.Equipo.CampeonatoCategoria.IdCampeonato,
-                inscripcion.Equipo.CampeonatoCategoria.Campeonato!.Nombre,
-                inscripcion.Jugador!.Cedula,
-                inscripcion.Jugador.Nombre,
-                inscripcion.Jugador.Apellido,
-                inscripcion.Jugador.Telefono,
-                inscripcion.Jugador.FechaNacimiento,
-                inscripcion.Estado,
-                inscripcion.FechaInscripcion))
+            .OrderBy(inscripcion => inscripcion.IdInscripcion)
             .ToListAsync(cancellationToken);
+
+        return await CreateJugadorEquipoResponsesAsync(inscripciones, cancellationToken);
     }
 
     public async Task<JugadorOperationResult> CreateJugadorAsync(
         CreateJugadorRequest request,
         CancellationToken cancellationToken)
     {
-        var cedula = request.Cedula.Trim();
-        var nombre = request.Nombre.Trim();
-        var apellido = request.Apellido.Trim();
+        var personaResult = await _personasServiceClient.CreateJugadorAsync(
+            new CreateJugadorPersonaRequest(
+                request.Cedula,
+                request.Nombre,
+                request.Apellido,
+                NormalizeOptionalText(request.Telefono),
+                request.FechaNacimiento,
+                request.Email,
+                request.PasswordTemporal),
+            cancellationToken);
 
-        var exists = await _dbContext.Jugadores
-            .AnyAsync(jugador => jugador.Cedula == cedula, cancellationToken);
-
-        if (exists)
+        if (!personaResult.Succeeded)
         {
-            return JugadorOperationResult.Failure("duplicate_player", "Ya existe un jugador con esa cedula.");
+            return JugadorOperationResult.Failure(
+                personaResult.ErrorCode ?? "personas_error",
+                personaResult.ErrorMessage ?? "No se pudo crear la persona del jugador.");
+        }
+
+        var persona = personaResult.Value!;
+        var alreadyLinked = await _dbContext.Jugadores
+            .AnyAsync(jugador => jugador.IdPersona == persona.IdPersona, cancellationToken);
+
+        if (alreadyLinked)
+        {
+            return JugadorOperationResult.Failure("duplicate_player", "La persona ya esta vinculada a un jugador.");
         }
 
         var jugador = new Jugador
         {
-            Cedula = cedula,
-            Nombre = nombre,
-            Apellido = apellido,
-            Telefono = NormalizeOptionalText(request.Telefono),
-            FechaNacimiento = request.FechaNacimiento,
+            IdPersona = persona.IdPersona,
             Activo = true
         };
 
@@ -148,14 +146,14 @@ public sealed class JugadorService : IJugadorService
         }
         catch (DbUpdateException exception) when (IsDuplicatePlayerException(exception))
         {
-            return JugadorOperationResult.Failure("duplicate_player", "Ya existe un jugador con esa cedula.");
+            return JugadorOperationResult.Failure("duplicate_player", "La persona ya esta vinculada a un jugador.");
         }
         catch (DbUpdateException)
         {
             return JugadorOperationResult.Failure("player_persistence_error", "No se pudo registrar el jugador en la base de datos.");
         }
 
-        return JugadorOperationResult.Success(CreateJugadorResponse(jugador));
+        return JugadorOperationResult.Success(CreateJugadorResponse(jugador, persona));
     }
 
     public async Task<JugadorOperationResult> AsignarJugadorEquipoAsync(
@@ -245,10 +243,105 @@ public sealed class JugadorService : IJugadorService
             return JugadorOperationResult.Failure("assignment_persistence_error", "No se pudo asignar el jugador al equipo.");
         }
 
-        return JugadorOperationResult.Success(CreateJugadorEquipoResponse(inscripcion));
+        var responses = await CreateJugadorEquipoResponsesAsync([inscripcion], cancellationToken);
+
+        return JugadorOperationResult.Success(responses.Single());
     }
 
-    private static JugadorResponse CreateJugadorResponse(Jugador jugador)
+    private IQueryable<Jugador> CreateJugadorQuery()
+    {
+        return _dbContext.Jugadores
+            .Include(jugador => jugador.Inscripciones)
+            .ThenInclude(inscripcion => inscripcion.Equipo)
+            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
+            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Campeonato)
+            .Include(jugador => jugador.Inscripciones)
+            .ThenInclude(inscripcion => inscripcion.Equipo)
+            .ThenInclude(equipo => equipo!.CampeonatoCategoria)
+            .ThenInclude(campeonatoCategoria => campeonatoCategoria!.Categoria);
+    }
+
+    private async Task<IReadOnlyCollection<JugadorResponse>> CreateJugadorResponsesAsync(
+        IReadOnlyCollection<Jugador> jugadores,
+        CancellationToken cancellationToken)
+    {
+        var personas = await GetPersonasByIdsAsync(
+            jugadores
+                .Where(jugador => jugador.IdPersona.HasValue)
+                .Select(jugador => jugador.IdPersona!.Value),
+            cancellationToken);
+
+        return jugadores
+            .Select(jugador => CreateJugadorResponse(
+                jugador,
+                jugador.IdPersona.HasValue ? personas.GetValueOrDefault(jugador.IdPersona.Value) : null))
+            .OrderBy(jugador => jugador.Apellido)
+            .ThenBy(jugador => jugador.Nombre)
+            .ThenBy(jugador => jugador.IdJugador)
+            .ToList();
+    }
+
+    private async Task<IReadOnlyCollection<JugadorEquipoResponse>> CreateJugadorEquipoResponsesAsync(
+        IReadOnlyCollection<InscripcionEquipoJugador> inscripciones,
+        CancellationToken cancellationToken)
+    {
+        var personas = await GetPersonasByIdsAsync(
+            inscripciones
+                .Where(inscripcion => inscripcion.Jugador?.IdPersona is not null)
+                .Select(inscripcion => inscripcion.Jugador!.IdPersona!.Value),
+            cancellationToken);
+
+        return inscripciones
+            .Select(inscripcion => CreateJugadorEquipoResponse(
+                inscripcion,
+                inscripcion.Jugador?.IdPersona is null ? null : personas.GetValueOrDefault(inscripcion.Jugador.IdPersona.Value)))
+            .OrderBy(inscripcion => inscripcion.Apellido)
+            .ThenBy(inscripcion => inscripcion.Nombre)
+            .ThenBy(inscripcion => inscripcion.IdInscripcion)
+            .ToList();
+    }
+
+    private async Task<Dictionary<int, PersonaClientResponse>> GetPersonasByIdsAsync(
+        IEnumerable<int> ids,
+        CancellationToken cancellationToken)
+    {
+        var distinctIds = ids.Distinct().ToArray();
+
+        if (distinctIds.Length == 0)
+        {
+            return [];
+        }
+
+        var result = await _personasServiceClient.GetPersonasAsync(distinctIds, null, null, cancellationToken);
+
+        return result.Succeeded
+            ? result.Value!.ToDictionary(persona => persona.IdPersona)
+            : [];
+    }
+
+    private static JugadorResponse CreateJugadorResponse(
+        Jugador jugador,
+        JugadorPersonaClientResponse persona)
+    {
+        return CreateJugadorResponse(
+            jugador,
+            new PersonaClientResponse(
+                persona.IdPersona,
+                persona.Cedula,
+                persona.Nombre,
+                persona.Apellido,
+                persona.Telefono,
+                persona.FechaNacimiento,
+                true),
+            persona.IdUsuario,
+            persona.Email);
+    }
+
+    private static JugadorResponse CreateJugadorResponse(
+        Jugador jugador,
+        PersonaClientResponse? persona,
+        int? idUsuario = null,
+        string? email = null)
     {
         var equipos = jugador.Inscripciones
             .OrderBy(inscripcion => inscripcion.Equipo?.CampeonatoCategoria?.Campeonato?.Nombre)
@@ -268,18 +361,23 @@ public sealed class JugadorService : IJugadorService
 
         return new JugadorResponse(
             jugador.IdJugador,
-            jugador.Cedula,
-            jugador.Nombre,
-            jugador.Apellido,
-            jugador.Telefono,
-            jugador.FechaNacimiento,
+            jugador.IdPersona ?? 0,
+            idUsuario,
+            persona?.Cedula ?? string.Empty,
+            persona?.Nombre ?? string.Empty,
+            persona?.Apellido ?? string.Empty,
+            email,
+            persona?.Telefono,
+            persona?.FechaNacimiento,
             jugador.Activo,
             jugador.FechaCreacion,
             jugador.FechaActualizacion,
             equipos);
     }
 
-    private static JugadorEquipoResponse CreateJugadorEquipoResponse(InscripcionEquipoJugador inscripcion)
+    private static JugadorEquipoResponse CreateJugadorEquipoResponse(
+        InscripcionEquipoJugador inscripcion,
+        PersonaClientResponse? persona)
     {
         return new JugadorEquipoResponse(
             inscripcion.IdInscripcion,
@@ -290,11 +388,11 @@ public sealed class JugadorService : IJugadorService
             inscripcion.Equipo?.CampeonatoCategoria?.Categoria?.Nombre ?? string.Empty,
             inscripcion.Equipo?.CampeonatoCategoria?.IdCampeonato ?? 0,
             inscripcion.Equipo?.CampeonatoCategoria?.Campeonato?.Nombre ?? string.Empty,
-            inscripcion.Jugador?.Cedula ?? string.Empty,
-            inscripcion.Jugador?.Nombre ?? string.Empty,
-            inscripcion.Jugador?.Apellido ?? string.Empty,
-            inscripcion.Jugador?.Telefono,
-            inscripcion.Jugador?.FechaNacimiento,
+            persona?.Cedula ?? string.Empty,
+            persona?.Nombre ?? string.Empty,
+            persona?.Apellido ?? string.Empty,
+            persona?.Telefono,
+            persona?.FechaNacimiento,
             inscripcion.Estado,
             inscripcion.FechaInscripcion);
     }
@@ -306,7 +404,7 @@ public sealed class JugadorService : IJugadorService
 
     private static bool IsDuplicatePlayerException(DbUpdateException exception)
     {
-        return ContainsDatabaseMessage(exception, "UQ_Jugadores_Cedula")
+        return ContainsDatabaseMessage(exception, "UQ_Jugadores_IdPersona")
             || ContainsDatabaseMessage(exception, "Cannot insert duplicate key")
             || ContainsDatabaseMessage(exception, "Violation of UNIQUE KEY constraint");
     }

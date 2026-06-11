@@ -41,4 +41,3 @@ public sealed class UpdateResultadoRequestValidator : AbstractValidator<UpdateRe
         return localSets != visitanteSets;
     }
 }
-

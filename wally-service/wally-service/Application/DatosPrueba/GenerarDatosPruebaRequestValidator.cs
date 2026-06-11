@@ -16,4 +16,3 @@ public sealed class GenerarDatosPruebaRequestValidator : AbstractValidator<Gener
             .InclusiveBetween(1, 12);
     }
 }
-

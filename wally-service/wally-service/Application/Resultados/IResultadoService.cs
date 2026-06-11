@@ -24,4 +24,3 @@ public interface IResultadoService
         UpdateResultadoRequest request,
         CancellationToken cancellationToken);
 }
-

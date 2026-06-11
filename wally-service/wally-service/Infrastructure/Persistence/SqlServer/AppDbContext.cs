@@ -52,13 +52,13 @@ public sealed class AppDbContext : DbContext
         {
             builder.ToTable("Jugadores");
             builder.HasKey(jugador => jugador.IdJugador);
-            builder.Property(jugador => jugador.Cedula).HasMaxLength(30).IsRequired();
-            builder.Property(jugador => jugador.Nombre).HasMaxLength(100).IsRequired();
-            builder.Property(jugador => jugador.Apellido).HasMaxLength(100).IsRequired();
-            builder.Property(jugador => jugador.Telefono).HasMaxLength(30);
+            builder.Property(jugador => jugador.IdPersona);
             builder.Property(jugador => jugador.Activo).HasDefaultValue(true);
             builder.Property(jugador => jugador.FechaCreacion).HasDefaultValueSql("SYSUTCDATETIME()");
-            builder.HasIndex(jugador => jugador.Cedula).IsUnique().HasDatabaseName("UQ_Jugadores_Cedula");
+            builder.HasIndex(jugador => jugador.IdPersona)
+                .IsUnique()
+                .HasFilter("[IdPersona] IS NOT NULL")
+                .HasDatabaseName("UQ_Jugadores_IdPersona");
         });
 
         modelBuilder.Entity<InscripcionEquipoJugador>(builder =>

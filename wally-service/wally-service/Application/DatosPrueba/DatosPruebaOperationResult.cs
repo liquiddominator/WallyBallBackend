@@ -32,4 +32,3 @@ public sealed class DatosPruebaOperationResult
         return new DatosPruebaOperationResult(false, null, errorCode, errorMessage);
     }
 }
-

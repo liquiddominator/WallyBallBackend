@@ -22,12 +22,12 @@ SQL Server
 
 La base de datos almacena la informacion transaccional del dominio deportivo: campeonatos, categorias, asociaciones categoria-campeonato, equipos, jugadores, inscripciones, fixture, resultados, posiciones, auditoria y reprogramaciones.
 
-La identidad pertenece a `identidad-service` y no forma parte de esta base de dominio.
+Personas e identidad pertenecen a `personas-service` y no forma parte de esta base de dominio.
 
 ## Decisiones Aplicadas
 
 - Se mantiene `WallyBallDb` como base transaccional del dominio deportivo.
-- Se separo identidad hacia `IdentidadDb` en `identidad-service`.
+- Se separaron personas e identidad hacia `PersonasDb` en `personas-service`.
 - Las categorias son reutilizables y se relacionan con campeonatos mediante `CampeonatosCategorias`.
 - Equipos, fases, partidos y posiciones dependen de `CampeonatosCategorias` para evitar mezclar datos entre campeonatos que reutilizan la misma categoria.
 - Se valida que un equipo no juegue mas de una vez en una jornada.
@@ -39,18 +39,19 @@ La identidad pertenece a `identidad-service` y no forma parte de esta base de do
 
 Representa jugadores registrados en el dominio deportivo.
 
+Los datos personales pertenecen a `personas-service`. Esta tabla solo mantiene el vinculo deportivo con la persona.
+
 Campos principales:
 
 - `IdJugador`: identificador interno.
-- `Cedula`: identificador civil unico.
-- `Nombre`, `Apellido`.
-- `Telefono`, `FechaNacimiento`.
+- `IdPersona`: referencia logica a `personas-service`.
 - `Activo`.
 - `FechaCreacion`, `FechaActualizacion`.
 
 Reglas:
 
-- `Cedula` debe ser unica.
+- `IdPersona` debe ser unico.
+- No existe FK fisica hacia personas porque pertenece a otra base y microservicio.
 - Un jugador puede asignarse a equipos mediante `InscripcionesEquipoJugador`.
 
 ## Campeonatos
@@ -264,7 +265,7 @@ Uso esperado:
 
 ## Indices y Restricciones Relevantes
 
-- `UQ_Jugadores_Cedula`: cedula unica.
+- `UQ_Jugadores_IdPersona`: evita vincular la misma persona con mas de un jugador.
 - `UQ_Categorias_Nombre`: evita categorias duplicadas en el catalogo.
 - `UQ_CampeonatosCategorias_Campeonato_Categoria`: evita asociar dos veces la misma categoria al mismo campeonato.
 - `UQ_Equipos_CampeonatoCategoria_Nombre`: evita equipos duplicados por categoria del campeonato.

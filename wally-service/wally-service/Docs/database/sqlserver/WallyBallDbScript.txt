@@ -60,18 +60,18 @@ GO
 
 CREATE TABLE Jugadores (
     IdJugador INT IDENTITY(1,1) NOT NULL,
-    Cedula NVARCHAR(30) NOT NULL,
-    Nombre NVARCHAR(100) NOT NULL,
-    Apellido NVARCHAR(100) NOT NULL,
-    Telefono NVARCHAR(30) NULL,
-    FechaNacimiento DATE NULL,
+    IdPersona INT NULL,
     Activo BIT NOT NULL CONSTRAINT DF_Jugadores_Activo DEFAULT 1,
     FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Jugadores_FechaCreacion DEFAULT SYSUTCDATETIME(),
     FechaActualizacion DATETIME2 NULL,
 
-    CONSTRAINT PK_Jugadores PRIMARY KEY (IdJugador),
-    CONSTRAINT UQ_Jugadores_Cedula UNIQUE (Cedula)
+    CONSTRAINT PK_Jugadores PRIMARY KEY (IdJugador)
 );
+GO
+
+CREATE UNIQUE INDEX UQ_Jugadores_IdPersona
+ON Jugadores(IdPersona)
+WHERE IdPersona IS NOT NULL;
 GO
 
 /* ============================================================

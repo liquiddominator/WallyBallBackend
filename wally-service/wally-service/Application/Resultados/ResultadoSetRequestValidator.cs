@@ -20,4 +20,3 @@ public sealed class ResultadoSetRequestValidator : AbstractValidator<ResultadoSe
             .WithMessage("Un set no puede terminar empatado.");
     }
 }
-

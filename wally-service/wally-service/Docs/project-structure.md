@@ -71,7 +71,7 @@ wally-service/
 
 ## Nota de Identidad
 
-La carpeta `Infrastructure/Authentication` se conserva mientras se completa la extraccion de identidad. Su objetivo en `wally-service` debe limitarse a validar JWT emitidos por `identidad-service`; no debe contener emision de tokens, credenciales ni refresh tokens una vez completada la separacion.
+La carpeta `Infrastructure/Authentication` se conserva mientras se completa la extraccion de identidad. Su objetivo en `wally-service` debe limitarse a validar JWT emitidos por `personas-service`; no debe contener emision de tokens, credenciales ni refresh tokens una vez completada la separacion.
 
 ## Carpetas Generadas
 

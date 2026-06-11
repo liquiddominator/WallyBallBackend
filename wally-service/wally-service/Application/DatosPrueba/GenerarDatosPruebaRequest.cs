@@ -7,4 +7,3 @@ public sealed record GenerarDatosPruebaRequest(
     bool GenerarFixture = true,
     bool RegistrarResultados = true,
     int? Seed = null);
-

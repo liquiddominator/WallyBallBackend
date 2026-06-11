@@ -110,6 +110,8 @@ Content-Type: application/json
   "cedula": "1234567",
   "nombre": "Carlos",
   "apellido": "Perez",
+  "email": "carlos.perez@example.com",
+  "passwordTemporal": "Temporal123!",
   "telefono": "70000000",
   "fechaNacimiento": "2001-05-10"
 }

@@ -15,7 +15,7 @@ Este documento describe dependencias, servicios externos y configuracion de `wal
 - `Microsoft.EntityFrameworkCore.Design`: herramientas de diseno EF Core.
 - `Microsoft.EntityFrameworkCore.Tools`: comandos EF Core.
 - `CassandraCSharpDriver`: driver para Apache Cassandra.
-- `Microsoft.AspNetCore.Authentication.JwtBearer`: middleware para validar JWT emitidos por `identidad-service`.
+- `Microsoft.AspNetCore.Authentication.JwtBearer`: middleware para validar JWT emitidos por `personas-service`.
 - `System.IdentityModel.Tokens.Jwt`: utilidades para validar JWT.
 - `FluentValidation.DependencyInjectionExtensions`: registro automatico de validadores.
 - `Asp.Versioning.Mvc`: versionado de API.
@@ -60,7 +60,7 @@ Configuracion local:
 }
 ```
 
-### Identidad Service
+### Personas Service
 
 Uso previsto:
 
@@ -81,7 +81,7 @@ Archivos disponibles:
 Secciones principales:
 
 - `ConnectionStrings:SqlServer`: conexion a SQL Server.
-- `Jwt`: parametros para validar tokens emitidos por identidad.
+- `Jwt`: parametros para validar tokens emitidos por personas-service.
 - `Cassandra`: nodos, puerto y keyspace.
 - `Serilog`: nivel y destino de logs.
 

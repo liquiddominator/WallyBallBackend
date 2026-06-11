@@ -6,4 +6,3 @@ public interface IPosicionService
         int campeonatoCategoriaId,
         CancellationToken cancellationToken);
 }
-

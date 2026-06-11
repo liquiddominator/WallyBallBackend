@@ -4,7 +4,7 @@ public sealed class JwtOptions
 {
     public const string SectionName = "Jwt";
 
-    public string Issuer { get; set; } = "IdentidadService";
+    public string Issuer { get; set; } = "PersonasService";
 
     public string Audience { get; set; } = "WallyBallClients";
 

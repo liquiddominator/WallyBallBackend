@@ -2,7 +2,7 @@
 
 `wally-service` es el microservicio de dominio deportivo. Expone endpoints para campeonatos, categorias, equipos, jugadores, fixture, resultados, posiciones, portal del jugador y reportes.
 
-La identidad vive en `identidad-service`; este servicio solo valida tokens JWT emitidos por identidad.
+Personas, identidad y autenticacion viven en `personas-service`; este servicio solo valida tokens JWT emitidos por personas-service.
 
 ## Capas
 
@@ -50,7 +50,7 @@ El entorno Docker standalone de este servicio incluye:
 - `cassandra`: base NoSQL para consultas denormalizadas.
 - `cassandra-init`: inicializador del keyspace `wallyball`.
 
-En una orquestacion de microservicios, este servicio debe convivir con `identidad-service` y validar los JWT emitidos por ese servicio.
+En una orquestacion de microservicios, este servicio debe convivir con `personas-service` y validar los JWT emitidos por ese servicio.
 
 ## Versionado y Rutas
 
@@ -77,7 +77,7 @@ Docs/api-endpoints.md
 ## Seguridad
 
 - `wally-service` no registra usuarios ni emite tokens.
-- Los endpoints protegidos validan JWT emitidos por `identidad-service`.
+- Los endpoints protegidos validan JWT emitidos por `personas-service`.
 - Los endpoints operativos del organizador requieren rol `ORGANIZADOR`.
 - Las consultas del jugador deben limitarse a informacion de su equipo/categoria cuando aplique.
 

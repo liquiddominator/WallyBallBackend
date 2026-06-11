@@ -16,4 +16,3 @@ public sealed record DatosPruebaCategoriaResponse(
     IReadOnlyCollection<int> IdsEquipos,
     IReadOnlyCollection<int> IdsPartidos,
     IReadOnlyCollection<int> IdsResultados);
-
