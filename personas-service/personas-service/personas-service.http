@@ -1,0 +1,100 @@
+@PersonasService_HostAddress = http://localhost:5097
+@AccessToken = reemplazar-con-token
+@RefreshToken = reemplazar-con-refresh-token
+
+POST {{PersonasService_HostAddress}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "jugador@example.com",
+  "password": "Password123!",
+  "nombreCompleto": "Organizador Demo"
+}
+
+###
+
+POST {{PersonasService_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "jugador@example.com",
+  "password": "Password123!"
+}
+
+###
+
+POST {{PersonasService_HostAddress}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{RefreshToken}}"
+}
+
+###
+
+GET {{PersonasService_HostAddress}}/api/v1/auth/me
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{PersonasService_HostAddress}}/api/v1/auth/change-password
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword123!"
+}
+
+###
+
+POST {{PersonasService_HostAddress}}/api/v1/auth/logout
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{RefreshToken}}"
+}
+
+###
+
+GET {{PersonasService_HostAddress}}/api/v1/gestion/roles
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{PersonasService_HostAddress}}/api/v1/gestion/roles/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{PersonasService_HostAddress}}/api/v1/gestion/usuarios
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{PersonasService_HostAddress}}/api/v1/gestion/usuarios/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{PersonasService_HostAddress}}/api/v1/personas/jugadores
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "cedula": "1234567",
+  "nombre": "Carlos",
+  "apellido": "Perez",
+  "telefono": "70000000",
+  "fechaNacimiento": "2001-05-10",
+  "email": "carlos.perez@example.com",
+  "password": "Temporal123!"
+}
+
+###

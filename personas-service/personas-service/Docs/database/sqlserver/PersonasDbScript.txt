@@ -1,0 +1,117 @@
+/* ============================================================
+   DATABASE: PersonasDb
+   Motor: SQL Server
+   Servicio: personas-service
+   ============================================================ */
+
+IF DB_ID(N'PersonasDb') IS NULL
+BEGIN
+    CREATE DATABASE PersonasDb;
+END;
+GO
+
+USE PersonasDb;
+GO
+
+/* ============================================================
+   Limpieza para desarrollo
+   ============================================================ */
+
+DROP TABLE IF EXISTS RefreshTokens;
+DROP TABLE IF EXISTS UsuarioRol;
+DROP TABLE IF EXISTS Roles;
+DROP TABLE IF EXISTS Usuarios;
+DROP TABLE IF EXISTS Personas;
+GO
+
+/* ============================================================
+   Personas, seguridad e identidad
+   ============================================================ */
+
+CREATE TABLE Personas (
+    IdPersona INT IDENTITY(1,1) NOT NULL,
+    Cedula NVARCHAR(30) NOT NULL,
+    Nombre NVARCHAR(100) NOT NULL,
+    Apellido NVARCHAR(100) NOT NULL,
+    Telefono NVARCHAR(30) NULL,
+    FechaNacimiento DATE NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Personas_Activo DEFAULT 1,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Personas_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Personas PRIMARY KEY (IdPersona),
+    CONSTRAINT UQ_Personas_Cedula UNIQUE (Cedula)
+);
+GO
+
+CREATE TABLE Usuarios (
+    IdUsuario INT IDENTITY(1,1) NOT NULL,
+    IdPersona INT NULL,
+    Email NVARCHAR(150) NOT NULL,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    NombreCompleto NVARCHAR(150) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Usuarios_Activo DEFAULT 1,
+    AccessFailedCount INT NOT NULL CONSTRAINT DF_Usuarios_AccessFailedCount DEFAULT 0,
+    LockoutEndUtc DATETIME2 NULL,
+    PasswordChangedAtUtc DATETIME2 NULL,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_Usuarios_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaActualizacion DATETIME2 NULL,
+
+    CONSTRAINT PK_Usuarios PRIMARY KEY (IdUsuario),
+    CONSTRAINT FK_Usuarios_Personas FOREIGN KEY (IdPersona) REFERENCES Personas(IdPersona),
+    CONSTRAINT UQ_Usuarios_Email UNIQUE (Email)
+);
+GO
+
+CREATE TABLE Roles (
+    IdRol INT IDENTITY(1,1) NOT NULL,
+    Nombre NVARCHAR(50) NOT NULL,
+    Descripcion NVARCHAR(200) NULL,
+    Activo BIT NOT NULL CONSTRAINT DF_Roles_Activo DEFAULT 1,
+
+    CONSTRAINT PK_Roles PRIMARY KEY (IdRol),
+    CONSTRAINT UQ_Roles_Nombre UNIQUE (Nombre)
+);
+GO
+
+CREATE TABLE UsuarioRol (
+    IdUsuarioRol INT IDENTITY(1,1) NOT NULL,
+    IdUsuario INT NOT NULL,
+    IdRol INT NOT NULL,
+    FechaAsignacion DATETIME2 NOT NULL CONSTRAINT DF_UsuarioRol_FechaAsignacion DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_UsuarioRol PRIMARY KEY (IdUsuarioRol),
+    CONSTRAINT FK_UsuarioRol_Usuarios FOREIGN KEY (IdUsuario) REFERENCES Usuarios(IdUsuario),
+    CONSTRAINT FK_UsuarioRol_Roles FOREIGN KEY (IdRol) REFERENCES Roles(IdRol),
+    CONSTRAINT UQ_UsuarioRol_Usuario_Rol UNIQUE (IdUsuario, IdRol)
+);
+GO
+
+CREATE TABLE RefreshTokens (
+    IdRefreshToken INT IDENTITY(1,1) NOT NULL,
+    IdUsuario INT NOT NULL,
+    TokenHash NVARCHAR(128) NOT NULL,
+    FechaCreacion DATETIME2 NOT NULL CONSTRAINT DF_RefreshTokens_FechaCreacion DEFAULT SYSUTCDATETIME(),
+    FechaExpiracion DATETIME2 NOT NULL,
+    FechaRevocacion DATETIME2 NULL,
+    ReemplazadoPorTokenHash NVARCHAR(128) NULL,
+
+    CONSTRAINT PK_RefreshTokens PRIMARY KEY (IdRefreshToken),
+    CONSTRAINT FK_RefreshTokens_Usuarios FOREIGN KEY (IdUsuario) REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT UQ_RefreshTokens_TokenHash UNIQUE (TokenHash)
+);
+GO
+
+CREATE INDEX IX_RefreshTokens_Usuario_Expiracion
+ON RefreshTokens (IdUsuario, FechaExpiracion);
+GO
+
+/* ============================================================
+   Datos iniciales
+   ============================================================ */
+
+INSERT INTO Roles (Nombre, Descripcion)
+VALUES
+('ORGANIZADOR', 'Usuario encargado de administrar usuarios, roles y credenciales.'),
+('JUGADOR', 'Usuario autenticado para consultar informacion deportiva permitida.');
+GO

@@ -1,0 +1,12 @@
+using FluentValidation;
+
+namespace PersonasService.Application.Auth;
+
+public sealed class LogoutRequestValidator : AbstractValidator<LogoutRequest>
+{
+    public LogoutRequestValidator()
+    {
+        RuleFor(request => request.RefreshToken)
+            .MaximumLength(500);
+    }
+}

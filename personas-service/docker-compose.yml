@@ -1,0 +1,44 @@
+services:
+  personas-api:
+    build:
+      context: .
+      dockerfile: personas-service/Dockerfile
+    container_name: personas-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SqlServer: Server=personas-sqlserver,1433;Database=PersonasDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True;Encrypt=False
+      Jwt__Issuer: PersonasService
+      Jwt__Audience: WallyBallClients
+      Jwt__SigningKey: development-signing-key-change-before-production-32
+      Jwt__ExpirationMinutes: 120
+      Jwt__RefreshTokenExpirationDays: 7
+      Jwt__MaxFailedLoginAttempts: 5
+      Jwt__LockoutMinutes: 15
+    ports:
+      - "5097:8080"
+    depends_on:
+      - personas-sqlserver
+    networks:
+      - personas-network
+
+  personas-sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: personas-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Your_password123
+      MSSQL_PID: Developer
+    ports:
+      - "1434:1433"
+    volumes:
+      - personas-sqlserver-data:/var/opt/mssql
+    networks:
+      - personas-network
+
+networks:
+  personas-network:
+    driver: bridge
+
+volumes:
+  personas-sqlserver-data:
