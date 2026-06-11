@@ -346,6 +346,123 @@ Notas:
 
 Respuestas relevantes: `200`, `400`, `404`, `409`.
 
+## Resultados
+
+### Listar resultados
+
+```http
+GET /api/v1/resultados
+GET /api/v1/resultados?campeonatoCategoriaId={campeonatoCategoriaId}
+```
+
+Respuesta: resultados registrados, incluyendo partido, equipos, ganador y detalle de sets.
+
+### Obtener resultado por id
+
+```http
+GET /api/v1/resultados/{resultadoId}
+```
+
+Respuesta: resultado solicitado o `404`.
+
+### Obtener resultado de un partido
+
+```http
+GET /api/v1/partidos/{partidoId}/resultado
+```
+
+Respuesta: resultado del partido o `404`.
+
+### Registrar resultado
+
+```http
+POST /api/v1/partidos/{partidoId}/resultado
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "sets": [
+    {
+      "numeroSet": 1,
+      "puntosLocal": 25,
+      "puntosVisitante": 20
+    },
+    {
+      "numeroSet": 2,
+      "puntosLocal": 22,
+      "puntosVisitante": 25
+    },
+    {
+      "numeroSet": 3,
+      "puntosLocal": 15,
+      "puntosVisitante": 12
+    }
+  ]
+}
+```
+
+Notas:
+
+- El sistema calcula automaticamente `setsLocal`, `setsVisitante` y equipo ganador.
+- El partido queda en estado `FINALIZADO`.
+- La tabla de posiciones se recalcula desde SQL Server.
+- No se permite registrar un segundo resultado para el mismo partido.
+
+Respuestas relevantes: `201`, `400`, `404`, `409`.
+
+Conflictos comunes:
+
+- `result_already_exists`: el partido ya tiene resultado.
+- `inactive_championship`: el campeonato no permite resultados.
+- `match_cancelled`: el partido esta cancelado.
+- `invalid_result`: el resultado no cumple reglas de integridad.
+
+### Modificar resultado
+
+```http
+PUT /api/v1/resultados/{resultadoId}
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "sets": [
+    {
+      "numeroSet": 1,
+      "puntosLocal": 25,
+      "puntosVisitante": 18
+    },
+    {
+      "numeroSet": 2,
+      "puntosLocal": 25,
+      "puntosVisitante": 21
+    }
+  ],
+  "motivo": "Correccion de planilla"
+}
+```
+
+Notas:
+
+- Reemplaza el detalle de sets del resultado.
+- Recalcula ganador y posiciones.
+- Registra auditoria del cambio.
+
+Respuestas relevantes: `200`, `400`, `404`, `409`.
+
+### Consultar auditoria de resultado
+
+```http
+GET /api/v1/resultados/{resultadoId}/auditoria
+```
+
+Respuesta: historial de cambios del resultado.
+
 ## Swagger y OpenAPI
 
 ```http

@@ -160,3 +160,81 @@ Content-Type: application/json
 }
 
 ###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/resultados
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/resultados?campeonatoCategoriaId=1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/resultados/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/partidos/1/resultado
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/partidos/1/resultado
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "sets": [
+    {
+      "numeroSet": 1,
+      "puntosLocal": 25,
+      "puntosVisitante": 20
+    },
+    {
+      "numeroSet": 2,
+      "puntosLocal": 22,
+      "puntosVisitante": 25
+    },
+    {
+      "numeroSet": 3,
+      "puntosLocal": 15,
+      "puntosVisitante": 12
+    }
+  ]
+}
+
+###
+
+PUT {{WallyBallBackend_HostAddress}}/api/v1/resultados/1
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "sets": [
+    {
+      "numeroSet": 1,
+      "puntosLocal": 25,
+      "puntosVisitante": 18
+    },
+    {
+      "numeroSet": 2,
+      "puntosLocal": 25,
+      "puntosVisitante": 21
+    }
+  ],
+  "motivo": "Correccion de planilla"
+}
+
+###
+
+GET {{WallyBallBackend_HostAddress}}/api/v1/resultados/1/auditoria
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###
