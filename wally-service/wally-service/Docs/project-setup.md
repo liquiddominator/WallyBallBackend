@@ -282,6 +282,7 @@ El entorno incluye:
 - Validacion JWT configurada.
 - Swagger UI con autorizacion Bearer JWT.
 - Epicas 2 a 8 implementadas: campeonatos, categorias, equipos, jugadores, fixture, resultados y posiciones.
+- Generacion de datos realistas con Bogus para ambientes de desarrollo y Docker.
 
 ## Siguientes Pasos Recomendados
 

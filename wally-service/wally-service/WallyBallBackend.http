@@ -244,3 +244,18 @@ Authorization: Bearer {{AccessToken}}
 Accept: application/json
 
 ###
+
+POST {{WallyBallBackend_HostAddress}}/api/v1/dev/datos-prueba
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "categorias": 2,
+  "equiposPorCategoria": 4,
+  "jugadoresPorEquipo": 8,
+  "generarFixture": true,
+  "registrarResultados": true,
+  "seed": 12345
+}
+
+###

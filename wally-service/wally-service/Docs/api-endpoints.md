@@ -496,6 +496,50 @@ Notas:
 
 Respuestas relevantes: `200`, `404`.
 
+## Datos de prueba
+
+### Generar datos realistas
+
+Disponible solo en ambientes `Development` y `Docker`.
+
+```http
+POST /api/v1/dev/datos-prueba
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "categorias": 2,
+  "equiposPorCategoria": 4,
+  "jugadoresPorEquipo": 8,
+  "generarFixture": true,
+  "registrarResultados": true,
+  "seed": 12345
+}
+```
+
+Notas:
+
+- Usa Bogus con locale `es`.
+- Crea un campeonato activo.
+- Crea categorias reutilizables asociadas al campeonato.
+- Crea equipos por categoria de campeonato.
+- Crea jugadores con nombres, apellidos, cedulas, telefonos y fechas de nacimiento realistas.
+- Inscribe jugadores en equipos respetando el maximo de 12 jugadores por equipo.
+- Opcionalmente genera fixture round-robin.
+- Opcionalmente registra resultados para poblar la tabla de posiciones.
+- `seed` permite repetir datos similares entre ejecuciones.
+
+Limites:
+
+- `categorias`: 1 a 4.
+- `equiposPorCategoria`: 2 a 8.
+- `jugadoresPorEquipo`: 1 a 12.
+
+Respuestas relevantes: `201`, `400`, `401`, `403`, `409`.
+
 ## Swagger y OpenAPI
 
 ```http
