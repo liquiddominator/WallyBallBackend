@@ -40,6 +40,7 @@ public sealed class PersonasController : ControllerBase
     }
 
     [HttpPost("jugadores")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(typeof(JugadorPersonaResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

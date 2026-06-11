@@ -147,9 +147,9 @@ Respuesta: `204`.
 
 Todos los endpoints de gestion requieren JWT valido con rol `ORGANIZADOR`.
 
-### Crear persona y usuario jugador
+### Crear persona y usuario jugador interno
 
-Usado por `wally-service` durante el alta de jugador.
+Endpoint interno usado por `wally-service` durante el alta de jugador. No se publica en Swagger para evitar que el organizador registre jugadores desde `personas-service` por error.
 
 ```http
 POST /api/v1/personas/jugadores
@@ -167,7 +167,7 @@ Body:
   "telefono": "70000000",
   "fechaNacimiento": "2001-05-10",
   "email": "carlos.perez@example.com",
-  "password": "Temporal123!",
+  "password": "Temporal123!"
 }
 ```
 

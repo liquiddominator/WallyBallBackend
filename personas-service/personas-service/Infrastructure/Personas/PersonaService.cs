@@ -138,7 +138,7 @@ public sealed class PersonaService : IPersonaService
 
     private static string NormalizeEmail(string email)
     {
-        return email.Trim().ToUpperInvariant();
+        return email.Trim().ToLowerInvariant();
     }
 
     private static string? NormalizeOptionalText(string? value)
