@@ -18,7 +18,10 @@ services:
     ports:
       - "5187:8080"
     depends_on:
-      - reportes-cassandra
+      reportes-cassandra:
+        condition: service_healthy
+      reportes-cassandra-init:
+        condition: service_completed_successfully
     networks:
       - reportes-network
 
@@ -29,10 +32,18 @@ services:
       CASSANDRA_CLUSTER_NAME: WallyBallReportesCluster
       CASSANDRA_DC: datacenter1
       CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 128M
     ports:
       - "9042:9042"
     volumes:
       - reportes-cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh localhost 9042 -e \"DESCRIBE KEYSPACES\" | grep -q system_schema"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
     networks:
       - reportes-network
 
@@ -40,11 +51,19 @@ services:
     image: cassandra:5.0
     container_name: reportes-cassandra-init
     depends_on:
-      - reportes-cassandra
+      reportes-cassandra:
+        condition: service_healthy
     volumes:
       - ./reportes-service/Docs/database/cassandra/ReportesCassandraScript.cql:/scripts/ReportesCassandraScript.cql:ro
     command: >
-      sh -c "sleep 45 &&
+      sh -c "
+      until cqlsh reportes-cassandra 9042 -e 'DESCRIBE KEYSPACES' > /tmp/cqlcheck 2>&1
+      && grep -q system_schema /tmp/cqlcheck;
+      do
+        cat /tmp/cqlcheck;
+        echo 'Esperando Cassandra...';
+        sleep 5;
+      done;
       cqlsh reportes-cassandra 9042 -f /scripts/ReportesCassandraScript.cql"
     restart: "no"
     networks:
