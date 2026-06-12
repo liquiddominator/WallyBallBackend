@@ -24,6 +24,22 @@ try
     });
 
     builder.Services.AddControllers();
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("Frontend", policy =>
+        {
+            var origins = builder.Configuration
+                .GetSection("Cors:AllowedOrigins")
+                .Get<string[]>()
+                ?? ["http://localhost:5173", "http://localhost:5174"];
+
+            policy
+                .WithOrigins(origins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+    });
+
     builder.Services.AddOpenApi();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -88,6 +104,7 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
+    app.UseCors("Frontend");
 
     app.UseAuthentication();
     app.UseAuthorization();
